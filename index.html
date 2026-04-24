@@ -54,16 +54,9 @@
     .header-right { display: flex; align-items: center; gap: 10px; }
     .header-date { font-size: 12px; opacity: 0.8; }
     .sync-pill {
-      font-size: 11px;
-      padding: 3px 9px;
-      border-radius: 99px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      border: none;
-      transition: background 0.15s;
+      font-size: 11px; padding: 3px 9px; border-radius: 99px;
+      font-weight: 600; display: flex; align-items: center; gap: 4px;
+      cursor: pointer; border: none; transition: background 0.15s;
     }
     .sync-pill.ok { background: rgba(255,255,255,0.2); color: white; }
     .sync-pill.ok:hover { background: rgba(255,255,255,0.3); }
@@ -79,16 +72,18 @@
 
     .nav { background: white; border-bottom: 1px solid var(--gray-200); display: flex; overflow-x: auto; }
     .nav-btn {
-      padding: 12px 20px;
-      border: none; background: none; cursor: pointer;
+      padding: 12px 18px; border: none; background: none; cursor: pointer;
       font-size: 13px; font-weight: 500; color: var(--gray-600);
-      border-bottom: 2px solid transparent;
-      white-space: nowrap; transition: all 0.15s;
+      border-bottom: 2px solid transparent; white-space: nowrap; transition: all 0.15s;
     }
     .nav-btn:hover { color: var(--blue); }
     .nav-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
 
-    .main { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+    .main { max-width: 900px; margin: 0 auto; padding: 20px 16px; }
+
+    /* Plan tab: full width */
+    #tab-plan.active ~ .main,
+    .plan-full { max-width: 100% !important; }
 
     .card { background: white; border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
     .card-header { padding: 14px 18px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
@@ -182,9 +177,124 @@
     .setup-skip a:hover { text-decoration: underline; }
     .info-box { background: var(--blue-light); border-radius: 8px; padding: 11px 13px; font-size: 12px; color: var(--blue-dark); margin-bottom: 16px; line-height: 1.5; }
 
+    /* ── PLANNING MATRIX ─────────────────────────────────────── */
+    #tab-plan { padding: 0; }
+    #tab-plan.active { display: flex; flex-direction: column; }
+    .plan-header {
+      background: white; border-bottom: 1px solid var(--gray-200);
+      padding: 12px 20px; display: flex; align-items: center; gap: 14px;
+      flex-wrap: wrap; position: sticky; top: 52px; z-index: 90;
+    }
+    .plan-month-nav { display: flex; align-items: center; gap: 8px; }
+    .plan-month-label { font-size: 15px; font-weight: 700; min-width: 130px; text-align: center; }
+    .plan-stats-row {
+      display: flex; gap: 10px; padding: 10px 20px; flex-wrap: wrap;
+      background: var(--gray-50); border-bottom: 1px solid var(--gray-200);
+    }
+    .plan-stat { background: white; border-radius: 8px; padding: 8px 14px; box-shadow: var(--shadow); font-size: 12px; white-space: nowrap; }
+    .plan-stat strong { font-size: 16px; color: var(--blue); display: block; }
+
+    .plan-wrap {
+      overflow-x: auto; overflow-y: auto;
+      flex: 1;
+    }
+    .plan-table {
+      border-collapse: collapse; font-size: 12px;
+      min-width: max-content;
+    }
+    .plan-table th, .plan-table td {
+      border: 1px solid var(--gray-200);
+      padding: 0;
+      white-space: nowrap;
+    }
+    /* sticky first column */
+    .plan-table .col-sticky {
+      position: sticky; left: 0; z-index: 10;
+      background: white;
+      min-width: 60px; max-width: 60px; width: 60px;
+      padding: 4px 6px; font-size: 11px;
+      overflow: hidden; text-overflow: ellipsis;
+      border-right: 2px solid var(--gray-200);
+    }
+    .plan-table .col-sticky2 { left: 60px; min-width: 56px; max-width: 56px; width: 56px; }
+    .plan-table .col-sticky3 { left: 116px; min-width: 50px; max-width: 50px; width: 50px; }
+    .plan-table .col-total  { left: 166px; min-width: 40px; max-width: 40px; width: 40px; font-weight: 700; color: var(--blue); border-right: 2px solid var(--gray-200); }
+
+    .plan-table thead th {
+      background: var(--gray-800); color: white; font-weight: 600;
+      padding: 6px 4px; text-align: center; font-size: 11px;
+    }
+    .plan-table thead th.col-sticky { background: var(--gray-800); color: white; text-align: left; }
+
+    /* day header cells */
+    .plan-day-hdr { min-width: 34px; width: 34px; text-align: center; }
+    .plan-day-hdr.today-col { background: #1a56db !important; }
+    .plan-day-hdr.weekend-col { background: #374151; }
+    .plan-day-hdr.exam-col { background: #991b1b !important; }
+
+    /* available hours row */
+    .row-avail td { background: #f0fdf4; }
+    .row-avail .col-sticky { background: #f0fdf4; font-weight: 600; color: var(--green); }
+    .avail-cell {
+      text-align: center; cursor: pointer;
+      min-width: 34px; width: 34px; height: 28px;
+      font-size: 11px; color: var(--green); font-weight: 600;
+    }
+    .avail-input {
+      width: 32px; text-align: center; border: 1px solid var(--green);
+      border-radius: 3px; font-size: 11px; padding: 1px 2px;
+    }
+
+    /* exam marker row */
+    .row-exam td { background: #fff1f2; }
+    .row-exam .col-sticky { background: #fff1f2; font-weight: 600; color: var(--red); }
+    .exam-cell {
+      text-align: center; cursor: pointer;
+      min-width: 34px; width: 34px; height: 28px; font-size: 13px;
+    }
+
+    /* task data cells */
+    .plan-cell {
+      text-align: center; min-width: 34px; width: 34px; height: 28px;
+      cursor: pointer; font-size: 11px; font-weight: 500;
+      position: relative;
+    }
+    .plan-cell:hover { background: var(--blue-light); }
+    .plan-cell.has-hours { background: #dbeafe; color: #1e3a8a; }
+    .plan-cell.has-hours-hi { background: #93c5fd; color: #1e3a8a; }
+    .plan-cell.today-col { outline: 2px solid var(--blue); outline-offset: -2px; }
+    .plan-cell.past-col { opacity: 0.6; }
+    .plan-cell.exam-col { background: #fee2e2 !important; }
+    .cell-input {
+      width: 32px; text-align: center; border: 1px solid var(--blue);
+      border-radius: 3px; font-size: 11px; padding: 1px 2px; position: absolute;
+      inset: 1px; z-index: 5;
+    }
+
+    /* task info cols */
+    .plan-subject { font-weight: 600; font-size: 11px; }
+    .plan-topic { font-size: 10px; color: var(--gray-600); }
+    .plan-type { font-size: 10px; color: var(--gray-400); }
+    .plan-total-cell {
+      text-align: center; min-width: 40px; width: 40px;
+      font-weight: 700; font-size: 11px; color: var(--blue);
+      padding: 4px;
+    }
+    .plan-progress { height: 3px; background: var(--gray-200); border-radius: 99px; margin-top: 2px; overflow: hidden; }
+    .plan-progress-fill { height: 100%; border-radius: 99px; background: var(--blue); }
+
+    /* subject group header row */
+    .row-subject-hdr td {
+      background: #eff6ff; font-weight: 700; font-size: 11px;
+      padding: 3px 6px; border-top: 2px solid #bfdbfe;
+    }
+    .row-subject-hdr .col-sticky { background: #eff6ff; }
+    .row-total td { background: #f8fafc; font-weight: 700; font-size: 11px; }
+    .row-total .col-sticky { background: #f8fafc; }
+
     @media (max-width: 500px) {
       .main { padding: 12px 10px; }
-      .nav-btn { padding: 10px 14px; font-size: 12px; }
+      .nav-btn { padding: 10px 12px; font-size: 12px; }
       .form-row { flex-direction: column; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .timer-display { font-size: 36px; }
@@ -199,31 +309,25 @@
     <div class="setup-logo">📚</div>
     <div class="setup-title">Uni Tracker</div>
     <div class="setup-sub">Configura el sync automàtic per accedir des de qualsevol dispositiu. Només cal fer-ho una vegada per dispositiu.</div>
-
     <div class="card">
       <div class="card-header"><span class="card-title">Configuració de sync (JSONBin)</span></div>
       <div class="card-body">
         <div class="info-box">
           JSONBin és un servei gratuït que guarda les teves dades al núvol. Funciona com una base de dades simple, accessible des de qualsevol dispositiu.
         </div>
-
         <div class="setup-step"><span class="step-badge">1</span><div>Ves a <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> i crea un compte gratuït (botó "Sign Up")</div></div>
         <div class="setup-step"><span class="step-badge">2</span><div>Un cop dins, ves a <strong>API Keys</strong> al menú de l'esquerra → copia la teva <strong>Secret Key</strong></div></div>
-        <div class="setup-step"><span class="step-badge">3</span><div>Enganxa la clau aquí sota i fes clic a "Connectar" — la resta ho fa l'app automàticament.</div></div>
-
+        <div class="setup-step"><span class="step-badge">3</span><div>Enganxa la clau aquí sota i fes clic a "Connectar".</div></div>
         <div class="form-group">
           <label>Secret Key (Master Key)</label>
           <input type="password" id="setupApiKey" placeholder="$2a$10$...">
         </div>
-        <div id="setupBinId" style="display:none"></div>
-
         <div style="display:flex; gap:10px; margin-top:4px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="setupConnectBtn" onclick="saveSync()">Connectar</button>
           <span id="setupSpinner" style="display:none; font-size:13px; color:var(--gray-600); align-self:center;">⏳ Creant base de dades…</span>
         </div>
       </div>
     </div>
-
     <div class="setup-skip">
       <a onclick="skipSync()">Continuar sense sync (un sol dispositiu)</a>
     </div>
@@ -245,14 +349,15 @@
   </div>
 
   <div class="nav">
-    <button class="nav-btn active" data-tab="log" onclick="switchTab('log')">⏱ Registrar</button>
-    <button class="nav-btn" data-tab="tasks" onclick="switchTab('tasks')">📋 Tasques</button>
-    <button class="nav-btn" data-tab="summary" onclick="switchTab('summary')">📊 Resum</button>
-    <button class="nav-btn" data-tab="export" onclick="switchTab('export')">⬇ Exportar</button>
-    <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')">⚙ Sync</button>
+    <button class="nav-btn active" data-tab="log"     onclick="switchTab('log')">⏱ Registrar</button>
+    <button class="nav-btn"        data-tab="plan"    onclick="switchTab('plan')">📅 Planificació</button>
+    <button class="nav-btn"        data-tab="tasks"   onclick="switchTab('tasks')">📋 Tasques</button>
+    <button class="nav-btn"        data-tab="summary" onclick="switchTab('summary')">📊 Resum</button>
+    <button class="nav-btn"        data-tab="export"  onclick="switchTab('export')">⬇ Exportar</button>
+    <button class="nav-btn"        data-tab="settings" onclick="switchTab('settings')">⚙ Sync</button>
   </div>
 
-  <div class="main">
+  <div class="main" id="mainContainer">
 
     <!-- LOG TAB -->
     <div class="tab-content active" id="tab-log">
@@ -306,12 +411,35 @@
       </div>
     </div>
 
+    <!-- PLANNING TAB -->
+    <div class="tab-content" id="tab-plan">
+      <div class="plan-header">
+        <div class="plan-month-nav">
+          <button class="btn btn-ghost btn-sm" onclick="prevMonth()">‹</button>
+          <div class="plan-month-label" id="planMonthLabel">—</div>
+          <button class="btn btn-ghost btn-sm" onclick="nextMonth()">›</button>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="goToday()">Avui</button>
+        <span style="font-size:12px; color:var(--gray-400);">Clica una cel·la per editar hores · Clica 📅 per marcar examen · Clica les hores lliures per editar-les</span>
+      </div>
+      <div class="plan-stats-row" id="planStatsRow"></div>
+      <div class="plan-wrap" id="planWrap">
+        <table class="plan-table" id="planTable"></table>
+      </div>
+    </div>
+
     <!-- TASKS TAB -->
     <div class="tab-content" id="tab-tasks">
       <div class="card">
         <div class="card-header">
           <span class="card-title">📋 Totes les tasques</span>
-          <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Nova tasca</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
+              📥 Importar tasques (JSON)
+              <input type="file" accept=".json" style="display:none;" onchange="importTasksMerge(event)">
+            </label>
+            <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Nova tasca</button>
+          </div>
         </div>
         <div class="card-body" style="padding:0;">
           <div class="table-wrap">
@@ -382,19 +510,40 @@
           <button class="btn btn-success" onclick="exportExcel()">⬇ Descarregar Excel</button>
         </div>
       </div>
+
       <div class="card">
-        <div class="card-header"><span class="card-title">🔄 Backup manual</span></div>
+        <div class="card-header"><span class="card-title">🔄 Backup / Importar</span></div>
         <div class="card-body">
           <p style="font-size:13px; color:var(--gray-600); margin-bottom:12px;">
-            Exporta una còpia de seguretat com a fitxer JSON.
+            Exporta una còpia completa (tasques + registres d'hores + calendari) com a fitxer JSON.
+            Per importar tasques noves <strong>sense esborrar les existents</strong>, fes servir el botó "Importar tasques" de la pestanya Tasques.
           </p>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="exportJSON()">📤 Exportar JSON</button>
+            <button class="btn btn-primary" onclick="exportJSON()">📤 Exportar JSON complet</button>
             <label class="btn btn-ghost" style="cursor:pointer;">
-              📂 Importar JSON
+              📂 Restaurar backup JSON
               <input type="file" accept=".json" style="display:none;" onchange="importJSON(event)">
             </label>
           </div>
+          <details style="margin-top:16px;">
+            <summary style="font-size:12px; color:var(--blue); cursor:pointer; font-weight:500;">Format JSON per importar tasques</summary>
+            <pre style="background:var(--gray-50);border-radius:6px;padding:12px;font-size:11px;overflow-x:auto;margin-top:8px;line-height:1.5;">{
+  "tasks": [
+    {
+      "subject": "Càlcul",
+      "topic": "T3 - Integrals",
+      "type": "Problemes",
+      "detail": "Llista 4",
+      "estimatedHours": 3,
+      "status": ""
+    }
+  ]
+}</pre>
+            <p style="font-size:11px;color:var(--gray-400);margin-top:6px;">
+              Camps obligatoris: <code>subject</code>. Opcionals: <code>topic</code>, <code>type</code>, <code>detail</code>, <code>estimatedHours</code>, <code>status</code>.<br>
+              Les tasques amb la mateixa assignatura + tema + tipus no es duplicaran.
+            </p>
+          </details>
         </div>
       </div>
     </div>
@@ -506,30 +655,32 @@
 
 <script>
 // ─── STORAGE KEYS ─────────────────────────────────────────────────────────────
-const LS_TASKS    = 'ut_tasks';
-const LS_LOGS     = 'ut_logs';
-const LS_API_KEY  = 'ut_apikey';
-const LS_BIN_ID   = 'ut_binid';
-const LS_SKIP     = 'ut_skip';
+const LS_TASKS   = 'ut_tasks';
+const LS_LOGS    = 'ut_logs';
+const LS_CAL     = 'ut_calendar';
+const LS_API_KEY = 'ut_apikey';
+const LS_BIN_ID  = 'ut_binid';
+const LS_SKIP    = 'ut_skip';
 
 // ─── LOCAL STORAGE ────────────────────────────────────────────────────────────
-function loadTasks() { try { return JSON.parse(localStorage.getItem(LS_TASKS)) || []; } catch { return []; } }
-function saveTasks(t) { localStorage.setItem(LS_TASKS, JSON.stringify(t)); }
-function loadLogs()  { try { return JSON.parse(localStorage.getItem(LS_LOGS))  || {}; } catch { return {}; } }
-function saveLogs(l) { localStorage.setItem(LS_LOGS,  JSON.stringify(l)); }
-function getSyncCreds() { return { key: localStorage.getItem(LS_API_KEY) || '', binId: localStorage.getItem(LS_BIN_ID) || '' }; }
-function hasSyncConfig() { const c = getSyncCreds(); return !!(c.key && c.binId); }
+function loadTasks()    { try { return JSON.parse(localStorage.getItem(LS_TASKS)) || []; } catch { return []; } }
+function saveTasks(t)   { localStorage.setItem(LS_TASKS, JSON.stringify(t)); }
+function loadLogs()     { try { return JSON.parse(localStorage.getItem(LS_LOGS))  || {}; } catch { return {}; } }
+function saveLogs(l)    { localStorage.setItem(LS_LOGS,  JSON.stringify(l)); }
+function loadCalendar() { try { return JSON.parse(localStorage.getItem(LS_CAL))   || {}; } catch { return {}; } }
+function saveCalendar(c){ localStorage.setItem(LS_CAL,  JSON.stringify(c)); }
+function getSyncCreds() { return { key: localStorage.getItem(LS_API_KEY)||'', binId: localStorage.getItem(LS_BIN_ID)||'' }; }
+function hasSyncConfig(){ const c=getSyncCreds(); return !!(c.key&&c.binId); }
 
 // ─── JSONBIN SYNC ─────────────────────────────────────────────────────────────
-let syncPending = false;
 let syncTimer = null;
 
 async function pushToCloud() {
   if (!hasSyncConfig()) return;
-  const { key, binId } = getSyncCreds();
+  const {key, binId} = getSyncCreds();
   setSyncStatus('syncing', 'Guardant…');
   try {
-    const data = { tasks: loadTasks(), logs: loadLogs(), updatedAt: new Date().toISOString() };
+    const data = { tasks: loadTasks(), logs: loadLogs(), calendar: loadCalendar(), updatedAt: new Date().toISOString() };
     const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
@@ -537,7 +688,7 @@ async function pushToCloud() {
     });
     if (!res.ok) throw new Error(await res.text());
     setSyncStatus('ok', 'Sincronitzat');
-  } catch (e) {
+  } catch(e) {
     setSyncStatus('error', 'Error sync');
     console.error('Sync push error:', e);
   }
@@ -545,7 +696,7 @@ async function pushToCloud() {
 
 async function pullFromCloud() {
   if (!hasSyncConfig()) return;
-  const { key, binId } = getSyncCreds();
+  const {key, binId} = getSyncCreds();
   setSyncStatus('syncing', 'Carregant…');
   try {
     const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
@@ -554,78 +705,56 @@ async function pullFromCloud() {
     if (!res.ok) throw new Error(await res.text());
     const json = await res.json();
     const data = json.record;
-    if (data.tasks) saveTasks(data.tasks);
-    if (data.logs)  saveLogs(data.logs);
+    if (data.tasks)    saveTasks(data.tasks);
+    if (data.logs)     saveLogs(data.logs);
+    if (data.calendar) saveCalendar(data.calendar);
     setSyncStatus('ok', 'Sincronitzat');
     refreshTaskSelects();
     renderTodayLog();
     return true;
-  } catch (e) {
+  } catch(e) {
     setSyncStatus('error', 'Error sync');
     console.error('Sync pull error:', e);
     return false;
   }
 }
 
-// Debounced push — waits 2s after last save before pushing
 function schedulePush() {
   clearTimeout(syncTimer);
   syncTimer = setTimeout(pushToCloud, 2000);
 }
 
 function setSyncStatus(state, label) {
-  const pill = document.getElementById('syncPill');
-  const dot  = document.getElementById('syncDot');
-  const lbl  = document.getElementById('syncLabel');
+  const pill=document.getElementById('syncPill'), dot=document.getElementById('syncDot'), lbl=document.getElementById('syncLabel');
   if (!pill) return;
-  pill.className = `sync-pill ${state}`;
-  dot.className  = `sync-dot ${state}`;
-  lbl.textContent = label;
+  pill.className=`sync-pill ${state}`; dot.className=`sync-dot ${state}`; lbl.textContent=label;
 }
 
 async function saveSync() {
   const keyInput = document.getElementById('setupApiKey') || document.getElementById('settingsApiKey');
   const key = keyInput.value.trim();
   if (!key) return showToast('Cal enganxar la Secret Key');
-
-  // Show spinner
-  const btn = document.getElementById('setupConnectBtn');
-  const spinner = document.getElementById('setupSpinner');
-  if (btn) btn.style.display = 'none';
-  if (spinner) spinner.style.display = 'inline';
+  const btn=document.getElementById('setupConnectBtn'), spinner=document.getElementById('setupSpinner');
+  if (btn) btn.style.display='none';
+  if (spinner) spinner.style.display='inline';
   setSyncStatus('syncing', 'Connectant…');
-
   try {
-    // Check if we already have a bin for this key
     let binId = localStorage.getItem(LS_BIN_ID);
-
     if (!binId) {
-      // Create a new bin automatically
       const createRes = await fetch('https://api.jsonbin.io/v3/b', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': key,
-          'X-Bin-Name': 'Uni Tracker'
-        },
-        body: JSON.stringify({ tasks: [], logs: {}, createdAt: new Date().toISOString() })
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': key, 'X-Bin-Name': 'Uni Tracker' },
+        body: JSON.stringify({ tasks:[], logs:{}, calendar:{}, createdAt: new Date().toISOString() })
       });
-      if (!createRes.ok) {
-        const err = await createRes.text();
-        throw new Error('Error creant bin: ' + err);
-      }
+      if (!createRes.ok) throw new Error('Error creant bin: ' + await createRes.text());
       const createData = await createRes.json();
       binId = createData.metadata.id;
     }
-
     localStorage.setItem(LS_API_KEY, key);
     localStorage.setItem(LS_BIN_ID, binId);
     localStorage.removeItem(LS_SKIP);
-
     document.getElementById('settingsApiKey').value = key;
     document.getElementById('settingsBinId').value  = binId;
-
-    // Pull existing data (in case reconnecting on second device)
     await pullFromCloud();
     showToast('✓ Sync configurat!');
     showApp();
@@ -633,59 +762,51 @@ async function saveSync() {
   } catch(e) {
     setSyncStatus('error', 'Error');
     showToast('Error: ' + (e.message || 'Revisa la Secret Key'));
-    console.error(e);
-    if (btn) btn.style.display = '';
-    if (spinner) spinner.style.display = 'none';
+    if (btn) btn.style.display='';
+    if (spinner) spinner.style.display='none';
   }
 }
 
 async function forcePull() {
   await pullFromCloud();
-  renderTodayLog();
-  renderTasksTable();
+  renderTodayLog(); renderTasksTable();
   showToast('Dades actualitzades des del cloud');
 }
 
 function disconnectSync() {
   if (!confirm('Es desconnectarà el sync. Les dades locals es mantenen.')) return;
-  localStorage.removeItem(LS_API_KEY);
-  localStorage.removeItem(LS_BIN_ID);
+  localStorage.removeItem(LS_API_KEY); localStorage.removeItem(LS_BIN_ID);
   localStorage.setItem(LS_SKIP, '1');
   setSyncStatus('off', 'Sense sync');
-  document.getElementById('settingsApiKey').value = '';
-  document.getElementById('settingsBinId').value  = '';
+  document.getElementById('settingsApiKey').value='';
+  document.getElementById('settingsBinId').value='';
   showToast('Sync desconnectat');
 }
 
-function skipSync() {
-  localStorage.setItem(LS_SKIP, '1');
-  showApp();
-}
+function skipSync() { localStorage.setItem(LS_SKIP,'1'); showApp(); }
 
 // ─── SETUP / APP SCREENS ──────────────────────────────────────────────────────
 function showSetup() {
-  document.getElementById('setupScreen').style.display = 'block';
-  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('setupScreen').style.display='block';
+  document.getElementById('appScreen').style.display='none';
 }
-
 function showApp() {
-  document.getElementById('setupScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display = 'block';
+  document.getElementById('setupScreen').style.display='none';
+  document.getElementById('appScreen').style.display='block';
   refreshSyncStatus();
 }
-
 function refreshSyncStatus() {
   if (hasSyncConfig()) {
-    const { binId } = getSyncCreds();
+    const {binId} = getSyncCreds();
     setSyncStatus('ok', 'Sync actiu');
     document.getElementById('syncStatusInfo').innerHTML =
       `Sync actiu amb bin <code style="background:var(--gray-100);padding:1px 4px;border-radius:3px;">${binId.slice(0,12)}…</code>`;
-    const { key, binId: b } = getSyncCreds();
-    document.getElementById('settingsApiKey').value = key;
-    document.getElementById('settingsBinId').value  = b;
+    const {key,binId:b} = getSyncCreds();
+    document.getElementById('settingsApiKey').value=key;
+    document.getElementById('settingsBinId').value=b;
   } else {
-    setSyncStatus('off', 'Sense sync');
-    document.getElementById('syncStatusInfo').textContent = 'Sync no configurat. Entra les credencials de JSONBin per activar-lo.';
+    setSyncStatus('off','Sense sync');
+    document.getElementById('syncStatusInfo').textContent='Sync no configurat. Entra les credencials de JSONBin per activar-lo.';
   }
 }
 
@@ -694,128 +815,116 @@ const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06
 const subjectColorMap = {};
 let colorIdx = 0;
 function getSubjectColor(s) {
-  const k = (s||'').trim().toLowerCase();
-  if (!(k in subjectColorMap)) subjectColorMap[k] = colorIdx++ % 8;
+  const k=(s||'').trim().toLowerCase();
+  if (!(k in subjectColorMap)) subjectColorMap[k]=colorIdx++%8;
   return subjectColorMap[k];
 }
-function colorDot(subj) {
-  return `<span class="dot" style="background:${COLORS[getSubjectColor(subj)]}"></span>`;
-}
+function colorDot(subj) { return `<span class="dot" style="background:${COLORS[getSubjectColor(subj)]}"></span>`; }
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
-  document.getElementById('tab-' + tab).classList.add('active');
-  const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+  document.querySelectorAll('.tab-content').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  const btn=document.querySelector(`.nav-btn[data-tab="${tab}"]`);
   if (btn) btn.classList.add('active');
-  if (tab === 'log')      renderTodayLog();
-  if (tab === 'tasks')    renderTasksTable();
-  if (tab === 'summary')  renderSummary();
-  if (tab === 'settings') refreshSyncStatus();
+  const mc=document.getElementById('mainContainer');
+  if (tab==='plan') {
+    mc.style.maxWidth='100%'; mc.style.padding='0';
+  } else {
+    mc.style.maxWidth=''; mc.style.padding='';
+  }
+  if (tab==='log')      renderTodayLog();
+  if (tab==='plan')     renderPlanMatrix();
+  if (tab==='tasks')    renderTasksTable();
+  if (tab==='summary')  renderSummary();
+  if (tab==='settings') refreshSyncStatus();
 }
 
 // ─── TIMER ────────────────────────────────────────────────────────────────────
-let timerInterval = null, timerSeconds = 0, timerRunning = false;
+let timerInterval=null, timerSeconds=0, timerRunning=false;
 
 function updateTimerLabel() {
-  const tasks = loadTasks();
-  const task = tasks.find(t => t.id === document.getElementById('timerTask').value);
+  const task=loadTasks().find(t=>t.id===document.getElementById('timerTask').value);
   document.getElementById('timerTaskLabel').textContent = task
     ? `${task.subject}${task.topic?' · '+task.topic:''}${task.type?' · '+task.type:''}`
     : 'Cap tasca seleccionada';
 }
-
 function tickTimer() {
   timerSeconds++;
-  const h = Math.floor(timerSeconds/3600), m = Math.floor(timerSeconds%3600/60), s = timerSeconds%60;
-  document.getElementById('timerDisplay').textContent =
-    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  const h=Math.floor(timerSeconds/3600), m=Math.floor(timerSeconds%3600/60), s=timerSeconds%60;
+  document.getElementById('timerDisplay').textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
-
 function startTimer() {
   if (!document.getElementById('timerTask').value) return showToast('Selecciona una tasca primer');
-  timerRunning = true;
-  timerInterval = setInterval(tickTimer, 1000);
-  document.getElementById('timerStartBtn').style.display = 'none';
-  document.getElementById('timerPauseBtn').style.display = '';
-  document.getElementById('timerStopBtn').style.display = '';
+  timerRunning=true; timerInterval=setInterval(tickTimer,1000);
+  document.getElementById('timerStartBtn').style.display='none';
+  document.getElementById('timerPauseBtn').style.display='';
+  document.getElementById('timerStopBtn').style.display='';
 }
-
 function pauseTimer() {
-  clearInterval(timerInterval); timerRunning = false;
-  document.getElementById('timerPauseBtn').textContent = '▶ Reprendre';
-  document.getElementById('timerPauseBtn').onclick = resumeTimer;
+  clearInterval(timerInterval); timerRunning=false;
+  document.getElementById('timerPauseBtn').textContent='▶ Reprendre';
+  document.getElementById('timerPauseBtn').onclick=resumeTimer;
 }
-
 function resumeTimer() {
-  timerRunning = true;
-  timerInterval = setInterval(tickTimer, 1000);
-  document.getElementById('timerPauseBtn').textContent = '⏸ Pausar';
-  document.getElementById('timerPauseBtn').onclick = pauseTimer;
+  timerRunning=true; timerInterval=setInterval(tickTimer,1000);
+  document.getElementById('timerPauseBtn').textContent='⏸ Pausar';
+  document.getElementById('timerPauseBtn').onclick=pauseTimer;
 }
-
 function stopTimer() {
-  clearInterval(timerInterval); timerRunning = false;
-  const hours = Math.round(timerSeconds/3600*4)/4;
-  if (hours >= 0.25) {
+  clearInterval(timerInterval); timerRunning=false;
+  const hours=Math.round(timerSeconds/3600*4)/4;
+  if (hours>=0.25) {
     logHours(document.getElementById('timerTask').value, todayStr(), hours);
     showToast(`✓ ${hours}h guardades`);
-    renderTodayLog();
-    schedulePush();
-  } else {
-    showToast('Menys de 15 min — no guardat');
-  }
-  timerSeconds = 0;
-  document.getElementById('timerDisplay').textContent = '00:00:00';
-  document.getElementById('timerStartBtn').style.display = '';
-  document.getElementById('timerPauseBtn').style.display = 'none';
-  document.getElementById('timerStopBtn').style.display = 'none';
-  document.getElementById('timerPauseBtn').textContent = '⏸ Pausar';
-  document.getElementById('timerPauseBtn').onclick = pauseTimer;
+    renderTodayLog(); schedulePush();
+  } else { showToast('Menys de 15 min — no guardat'); }
+  timerSeconds=0;
+  document.getElementById('timerDisplay').textContent='00:00:00';
+  document.getElementById('timerStartBtn').style.display='';
+  document.getElementById('timerPauseBtn').style.display='none';
+  document.getElementById('timerStopBtn').style.display='none';
+  document.getElementById('timerPauseBtn').textContent='⏸ Pausar';
+  document.getElementById('timerPauseBtn').onclick=pauseTimer;
 }
 
 // ─── LOG HOURS ────────────────────────────────────────────────────────────────
 function logHours(taskId, date, hours) {
-  if (!taskId || !date || hours <= 0) return;
-  const logs = loadLogs();
-  if (!logs[taskId]) logs[taskId] = {};
-  logs[taskId][date] = Math.round(((logs[taskId][date]||0) + hours)*100)/100;
+  if (!taskId||!date||hours<=0) return;
+  const logs=loadLogs();
+  if (!logs[taskId]) logs[taskId]={};
+  logs[taskId][date]=Math.round(((logs[taskId][date]||0)+hours)*100)/100;
   saveLogs(logs);
 }
-
 function logManual() {
-  const taskId = document.getElementById('manualTask').value;
-  const hours  = parseFloat(document.getElementById('manualHours').value);
-  const date   = document.getElementById('manualDate').value;
+  const taskId=document.getElementById('manualTask').value;
+  const hours=parseFloat(document.getElementById('manualHours').value);
+  const date=document.getElementById('manualDate').value;
   if (!taskId) return showToast('Selecciona una tasca');
-  if (!hours || hours <= 0) return showToast('Entra les hores');
-  if (!date)  return showToast('Selecciona una data');
-  logHours(taskId, date, hours);
-  document.getElementById('manualHours').value = '';
-  renderTodayLog();
-  schedulePush();
+  if (!hours||hours<=0) return showToast('Entra les hores');
+  if (!date) return showToast('Selecciona una data');
+  logHours(taskId,date,hours);
+  document.getElementById('manualHours').value='';
+  renderTodayLog(); schedulePush();
   showToast(`✓ ${hours}h guardades`);
 }
-
-function deleteLogEntry(taskId, date) {
-  const logs = loadLogs();
+function deleteLogEntry(taskId,date) {
+  const logs=loadLogs();
   if (logs[taskId]) { delete logs[taskId][date]; saveLogs(logs); }
-  renderTodayLog();
-  schedulePush();
+  renderTodayLog(); schedulePush();
 }
-
 function todayStr() { return new Date().toISOString().slice(0,10); }
 
 function renderTodayLog() {
-  const dateVal = document.getElementById('manualDate').value || todayStr();
-  const tasks = loadTasks(), logs = loadLogs();
-  let html = '', total = 0;
+  const dateVal=document.getElementById('manualDate').value||todayStr();
+  const tasks=loadTasks(), logs=loadLogs();
+  let html='', total=0;
   for (const t of tasks) {
-    const h = (logs[t.id] && logs[t.id][dateVal]) || 0;
-    if (h > 0) {
-      total += h;
-      html += `<div class="log-item">
+    const h=(logs[t.id]&&logs[t.id][dateVal])||0;
+    if (h>0) {
+      total+=h;
+      html+=`<div class="log-item">
         <div>${colorDot(t.subject)}<span class="log-subject">${esc(t.subject)}</span>
           <span class="log-detail"> · ${esc(t.topic||'')}${t.type?' · '+t.type:''}</span></div>
         <div style="display:flex;align-items:center;gap:10px;">
@@ -824,32 +933,29 @@ function renderTodayLog() {
         </div></div>`;
     }
   }
-  const months = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
-  const [y,m,d] = dateVal.split('-');
-  document.getElementById('todayLogTitle').textContent = `Registrat el ${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
-  document.getElementById('todayLogs').innerHTML = html || '<div class="empty"><div class="empty-icon">📭</div>Res registrat aquest dia</div>';
-  document.getElementById('todayTotal').textContent = total > 0 ? `Total: ${total}h` : '';
+  const months=['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+  const [y,m,d]=dateVal.split('-');
+  document.getElementById('todayLogTitle').textContent=`Registrat el ${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+  document.getElementById('todayLogs').innerHTML=html||'<div class="empty"><div class="empty-icon">📭</div>Res registrat aquest dia</div>';
+  document.getElementById('todayTotal').textContent=total>0?`Total: ${total}h`:'';
 }
 
 // ─── TASKS TABLE ──────────────────────────────────────────────────────────────
 function hoursForTask(id) {
-  const logs = loadLogs();
+  const logs=loadLogs();
   if (!logs[id]) return 0;
   return Object.values(logs[id]).reduce((a,b)=>a+b,0);
 }
-
 function renderTasksTable() {
-  const tasks = loadTasks();
-  const tbody = document.getElementById('tasksTableBody');
-  if (!tasks.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">Cap tasca</td></tr>'; return; }
-  tbody.innerHTML = tasks.map(t => {
-    const done = hoursForTask(t.id);
-    const pct = t.estimatedHours > 0 ? Math.min(100, Math.round(done/t.estimatedHours*100)) : null;
+  const tasks=loadTasks();
+  const tbody=document.getElementById('tasksTableBody');
+  if (!tasks.length) { tbody.innerHTML='<tr><td colspan="9" class="empty">Cap tasca</td></tr>'; return; }
+  tbody.innerHTML=tasks.map(t=>{
+    const done=hoursForTask(t.id);
+    const pct=t.estimatedHours>0?Math.min(100,Math.round(done/t.estimatedHours*100)):null;
     return `<tr>
       <td>${colorDot(t.subject)}${esc(t.subject)}</td>
-      <td>${esc(t.topic||'—')}</td>
-      <td>${esc(t.type||'—')}</td>
-      <td>${esc(t.detail||'—')}</td>
+      <td>${esc(t.topic||'—')}</td><td>${esc(t.type||'—')}</td><td>${esc(t.detail||'—')}</td>
       <td>${t.status==='ok'?'<span class="badge badge-ok">✓ Fet</span>':'<span class="badge badge-pending">Pendent</span>'}</td>
       <td>${t.estimatedHours||'—'}</td>
       <td style="color:var(--blue);font-weight:600">${done>0?done.toFixed(1):'0'}</td>
@@ -865,117 +971,357 @@ function renderTasksTable() {
 
 // ─── TASK MODAL ───────────────────────────────────────────────────────────────
 function openTaskModal(editId) {
-  const tasks = loadTasks();
+  const tasks=loadTasks();
   document.getElementById('taskModal').classList.add('open');
-  document.getElementById('editTaskId').value = editId || '';
-  document.getElementById('taskModalTitle').textContent = editId ? 'Editar tasca' : 'Nova tasca';
-  const subjects = [...new Set(tasks.map(t=>t.subject.trim()))];
-  document.getElementById('subjectSuggestions').innerHTML = subjects.map(s=>`<option value="${esc(s)}">`).join('');
+  document.getElementById('editTaskId').value=editId||'';
+  document.getElementById('taskModalTitle').textContent=editId?'Editar tasca':'Nova tasca';
+  const subjects=[...new Set(tasks.map(t=>t.subject.trim()))];
+  document.getElementById('subjectSuggestions').innerHTML=subjects.map(s=>`<option value="${esc(s)}">`).join('');
   if (editId) {
-    const t = tasks.find(t=>t.id===editId);
+    const t=tasks.find(t=>t.id===editId);
     if (t) {
-      document.getElementById('taskSubject').value   = t.subject;
-      document.getElementById('taskTopic').value     = t.topic||'';
-      document.getElementById('taskType').value      = t.type||'';
-      document.getElementById('taskDetail').value    = t.detail||'';
-      document.getElementById('taskEstimated').value = t.estimatedHours||'';
-      document.getElementById('taskStatus').value    = t.status||'';
+      document.getElementById('taskSubject').value  =t.subject;
+      document.getElementById('taskTopic').value    =t.topic||'';
+      document.getElementById('taskType').value     =t.type||'';
+      document.getElementById('taskDetail').value   =t.detail||'';
+      document.getElementById('taskEstimated').value=t.estimatedHours||'';
+      document.getElementById('taskStatus').value   =t.status||'';
     }
   } else {
     ['taskSubject','taskTopic','taskDetail','taskEstimated'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('taskType').value = '';
-    document.getElementById('taskStatus').value = '';
+    document.getElementById('taskType').value=''; document.getElementById('taskStatus').value='';
   }
 }
-
 function closeTaskModal() { document.getElementById('taskModal').classList.remove('open'); }
 
 function saveTask() {
-  const subject = document.getElementById('taskSubject').value.trim();
+  const subject=document.getElementById('taskSubject').value.trim();
   if (!subject) return showToast('Assignatura obligatòria');
-  const tasks = loadTasks();
-  const editId = document.getElementById('editTaskId').value;
-  const data = {
-    subject,
-    topic:          document.getElementById('taskTopic').value.trim(),
-    type:           document.getElementById('taskType').value,
-    detail:         document.getElementById('taskDetail').value.trim(),
+  const tasks=loadTasks();
+  const editId=document.getElementById('editTaskId').value;
+  const data={
+    subject, topic: document.getElementById('taskTopic').value.trim(),
+    type: document.getElementById('taskType').value,
+    detail: document.getElementById('taskDetail').value.trim(),
     estimatedHours: parseFloat(document.getElementById('taskEstimated').value)||0,
-    status:         document.getElementById('taskStatus').value,
+    status: document.getElementById('taskStatus').value
   };
   if (editId) {
-    const i = tasks.findIndex(t=>t.id===editId);
-    if (i!==-1) tasks[i] = {...tasks[i], ...data};
+    const i=tasks.findIndex(t=>t.id===editId);
+    if (i!==-1) tasks[i]={...tasks[i],...data};
   } else {
-    tasks.push({ id: genId(), createdAt: todayStr(), ...data });
+    tasks.push({id:genId(), createdAt:todayStr(), ...data});
   }
-  saveTasks(tasks);
-  closeTaskModal();
-  renderTasksTable();
-  refreshTaskSelects();
-  schedulePush();
+  saveTasks(tasks); closeTaskModal(); renderTasksTable(); refreshTaskSelects(); schedulePush();
   showToast('✓ Tasca guardada');
 }
 
 function deleteTask(id) {
   if (!confirm('Segur que vols eliminar? Es perdran les hores registrades.')) return;
   saveTasks(loadTasks().filter(t=>t.id!==id));
-  const logs = loadLogs(); delete logs[id]; saveLogs(logs);
-  renderTasksTable();
-  refreshTaskSelects();
-  schedulePush();
+  const logs=loadLogs(); delete logs[id]; saveLogs(logs);
+  renderTasksTable(); refreshTaskSelects(); schedulePush();
   showToast('Tasca eliminada');
+}
+
+// ─── IMPORT TASKS (MERGE MODE) ────────────────────────────────────────────────
+function importTasksMerge(e) {
+  const file=e.target.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try {
+      const data=JSON.parse(ev.target.result);
+      const incoming=data.tasks||[];
+      if (!Array.isArray(incoming)||!incoming.length) return showToast('Cap tasca al fitxer');
+      const existing=loadTasks();
+      const existingKeys=new Set(existing.map(t=>`${(t.subject||'').toLowerCase()}|${(t.topic||'').toLowerCase()}|${(t.type||'').toLowerCase()}`));
+      let added=0;
+      for (const raw of incoming) {
+        const key=`${(raw.subject||'').toLowerCase()}|${(raw.topic||'').toLowerCase()}|${(raw.type||'').toLowerCase()}`;
+        if (existingKeys.has(key)) continue;
+        existing.push({
+          id: genId(), createdAt: todayStr(),
+          subject: raw.subject||'', topic: raw.topic||'', type: raw.type||'',
+          detail: raw.detail||'', estimatedHours: parseFloat(raw.estimatedHours)||0,
+          status: raw.status||''
+        });
+        existingKeys.add(key);
+        added++;
+      }
+      saveTasks(existing); refreshTaskSelects(); renderTasksTable(); schedulePush();
+      showToast(`✓ ${added} tasques noves afegides (${incoming.length-added} duplicades ignorades)`);
+    } catch { showToast('Error: fitxer invàlid'); }
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+// ─── PLANNING MATRIX ──────────────────────────────────────────────────────────
+let planYear  = new Date().getFullYear();
+let planMonth = new Date().getMonth();
+
+function prevMonth() { planMonth--; if(planMonth<0){planMonth=11;planYear--;} renderPlanMatrix(); }
+function nextMonth() { planMonth++; if(planMonth>11){planMonth=0;planYear++;} renderPlanMatrix(); }
+function goToday()   { planYear=new Date().getFullYear(); planMonth=new Date().getMonth(); renderPlanMatrix(); }
+
+function daysInMonth(y,m) { return new Date(y,m+1,0).getDate(); }
+function dateStr(y,m,d)   { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
+function dayOfWeek(y,m,d) { return new Date(y,m,d).getDay(); } // 0=Sun
+
+const MONTH_NAMES = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
+const DAY_NAMES   = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
+
+function renderPlanMatrix() {
+  const tasks  = loadTasks();
+  const logs   = loadLogs();
+  const cal    = loadCalendar();
+  const nDays  = daysInMonth(planYear, planMonth);
+  const today  = todayStr();
+
+  document.getElementById('planMonthLabel').textContent = `${MONTH_NAMES[planMonth]} ${planYear}`;
+
+  // Build day list
+  const days = [];
+  for (let d=1; d<=nDays; d++) {
+    const ds = dateStr(planYear, planMonth, d);
+    const dow = dayOfWeek(planYear, planMonth, d);
+    days.push({ d, ds, dow, isWeekend: dow===0||dow===6, isToday: ds===today });
+  }
+
+  // Calendar keys for this month
+  const calKey = `${planYear}-${String(planMonth+1).padStart(2,'0')}`;
+
+  // Stats
+  let totalAvail=0, totalDone=0, totalEstimated=0;
+  days.forEach(({ds})=>{ totalAvail += parseFloat(cal[ds]?.avail||0); });
+  tasks.forEach(t=>{
+    totalEstimated += t.estimatedHours||0;
+    days.forEach(({ds})=>{ totalDone += (logs[t.id]&&logs[t.id][ds])||0; });
+  });
+  const examDays = days.filter(({ds})=>cal[ds]?.exam).length;
+
+  // Stats row
+  document.getElementById('planStatsRow').innerHTML = `
+    <div class="plan-stat"><strong>${totalAvail.toFixed(0)}h</strong>Hores lliures al mes</div>
+    <div class="plan-stat"><strong>${totalDone.toFixed(1)}h</strong>Hores estudiat</div>
+    <div class="plan-stat"><strong>${Math.max(0,totalEstimated-hoursForAllTasksAll()).toFixed(1)}h</strong>Hores restants</div>
+    <div class="plan-stat"><strong>${examDays}</strong>Dies d'examen</div>
+    <div class="plan-stat"><strong>${tasks.filter(t=>t.status!=='ok').length}</strong>Tasques pendents</div>`;
+
+  // Group tasks by subject
+  const subjMap = {};
+  tasks.forEach(t=>{
+    const s=t.subject.trim();
+    if (!subjMap[s]) subjMap[s]=[];
+    subjMap[s].push(t);
+  });
+
+  // Header row
+  const sticky4 = `style="position:sticky;left:0;z-index:11;background:var(--gray-800);"`;
+  let thead = `<thead><tr>
+    <th class="col-sticky" ${sticky4}>Assignatura</th>
+    <th class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:11;background:var(--gray-800);">Tema</th>
+    <th class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:11;background:var(--gray-800);">Tipus</th>
+    <th class="col-sticky col-total" style="position:sticky;left:166px;z-index:11;background:var(--gray-800);">Total</th>`;
+  days.forEach(({d,dow,ds,isToday})=>{
+    const isExam=!!cal[ds]?.exam;
+    let cls='plan-day-hdr';
+    if (isToday) cls+=' today-col';
+    else if (isExam) cls+=' exam-col';
+    else if (dow===0||dow===6) cls+=' weekend-col';
+    thead+=`<th class="${cls}"><div>${d}</div><div style="font-size:9px;opacity:0.7">${DAY_NAMES[dow]}</div></th>`;
+  });
+  thead+='</tr></thead>';
+
+  // Available hours row
+  let availRow = `<tr class="row-avail">
+    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f0fdf4;font-size:10px;color:var(--green);font-weight:600;">Hores lliures</td>
+    <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#f0fdf4;"></td>
+    <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#f0fdf4;"></td>
+    <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#f0fdf4;font-size:10px;font-weight:700;color:var(--green);text-align:center;">${totalAvail.toFixed(0)}</td>`;
+  days.forEach(({ds})=>{
+    const val=cal[ds]?.avail||'';
+    availRow+=`<td class="avail-cell" onclick="editAvailCell('${ds}',this)">${val||'—'}</td>`;
+  });
+  availRow+='</tr>';
+
+  // Exam row
+  let examRow = `<tr class="row-exam">
+    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#fff1f2;font-size:10px;color:var(--red);font-weight:600;">Exàmens</td>
+    <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#fff1f2;"></td>
+    <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#fff1f2;"></td>
+    <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#fff1f2;"></td>`;
+  days.forEach(({ds})=>{
+    const isExam=!!cal[ds]?.exam;
+    examRow+=`<td class="exam-cell" onclick="toggleExam('${ds}')" title="${isExam?'Treure examen':'Marcar examen'}">${isExam?'📅':''}</td>`;
+  });
+  examRow+='</tr>';
+
+  // Monthly total row per day
+  let monthTotals = [];
+  days.forEach(({ds})=>{
+    let t=0;
+    tasks.forEach(task=>{ t+=(logs[task.id]&&logs[task.id][ds])||0; });
+    monthTotals.push(t);
+  });
+  let totalRow = `<tr class="row-total">
+    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f8fafc;font-size:10px;font-weight:700;">TOTAL DIA</td>
+    <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#f8fafc;"></td>
+    <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#f8fafc;"></td>
+    <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#f8fafc;font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${totalDone.toFixed(1)}</td>`;
+  monthTotals.forEach((t,i)=>{
+    const ds=days[i].ds;
+    const isToday=ds===today, isExam=!!cal[ds]?.exam;
+    let style='text-align:center;font-size:11px;font-weight:700;';
+    if (t>0) style+='color:var(--blue);';
+    if (isToday) style+='outline:2px solid var(--blue);outline-offset:-2px;';
+    if (isExam) style+='background:#fee2e2;';
+    totalRow+=`<td style="${style}">${t>0?t.toFixed(1):''}</td>`;
+  });
+  totalRow+='</tr>';
+
+  // Task rows
+  let taskRows='';
+  Object.entries(subjMap).forEach(([subj,subjTasks])=>{
+    const color=COLORS[getSubjectColor(subj)];
+    // subject header
+    taskRows+=`<tr class="row-subject-hdr">
+      <td class="col-sticky" colspan="1" style="position:sticky;left:0;z-index:8;background:#eff6ff;color:${color};font-weight:700;font-size:11px;border-left:3px solid ${color};">
+        ${esc(subj)}
+      </td>
+      <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#eff6ff;"></td>
+      <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#eff6ff;"></td>
+      <td class="col-sticky col-total"   style="position:sticky;left:166px;z-index:8;background:#eff6ff;"></td>
+      ${days.map(()=>'<td style="background:#eff6ff;"></td>').join('')}
+    </tr>`;
+    subjTasks.forEach(t=>{
+      const taskTotal=hoursForTask(t.id);
+      const pct=t.estimatedHours>0?Math.min(100,Math.round(taskTotal/t.estimatedHours*100)):null;
+      taskRows+=`<tr>
+        <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:white;border-left:3px solid ${color};"></td>
+        <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:white;font-size:10px;color:var(--gray-600);">${esc(t.topic||'—')}</td>
+        <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:white;font-size:10px;color:var(--gray-400);">${esc(t.type||'')}</td>
+        <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:white;padding:4px;">
+          <div style="font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${taskTotal>0?taskTotal.toFixed(1):''}</div>
+          ${pct!==null?`<div class="plan-progress"><div class="plan-progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':color};"></div></div>`:''}
+        </td>`;
+      days.forEach(({ds,isToday})=>{
+        const h=(logs[t.id]&&logs[t.id][ds])||0;
+        const isExam=!!cal[ds]?.exam;
+        const isPast=ds<today;
+        let cls='plan-cell';
+        if (h>2)      cls+=' has-hours-hi';
+        else if (h>0) cls+=' has-hours';
+        if (isToday)  cls+=' today-col';
+        if (isPast&&!h) cls+=' past-col';
+        if (isExam)   cls+=' exam-col';
+        taskRows+=`<td class="${cls}" onclick="editCell('${t.id}','${ds}',this)">${h>0?h:''}</td>`;
+      });
+      taskRows+='</tr>';
+    });
+  });
+
+  if (!tasks.length) {
+    taskRows=`<tr><td colspan="${4+nDays}" class="empty" style="padding:32px;">Cap tasca. Ves a Tasques per afegir-ne.</td></tr>`;
+  }
+
+  document.getElementById('planTable').innerHTML = thead + `<tbody>${availRow}${examRow}${totalRow}${taskRows}</tbody>`;
+}
+
+function hoursForAllTasksAll() {
+  const logs=loadLogs();
+  let total=0;
+  Object.values(logs).forEach(tl=>Object.values(tl).forEach(h=>{ total+=h; }));
+  return total;
+}
+
+// Inline edit: available hours cell
+function editAvailCell(ds, td) {
+  if (td.querySelector('input')) return;
+  const cal=loadCalendar();
+  const cur=cal[ds]?.avail||'';
+  const inp=document.createElement('input');
+  inp.type='number'; inp.min='0'; inp.max='24'; inp.step='0.5';
+  inp.value=cur; inp.className='avail-input';
+  td.innerHTML=''; td.appendChild(inp); inp.focus(); inp.select();
+  const save=()=>{
+    const v=parseFloat(inp.value);
+    if (!cal[ds]) cal[ds]={};
+    if (!isNaN(v)&&v>0) { cal[ds].avail=v; }
+    else { delete cal[ds].avail; if (!cal[ds].exam) delete cal[ds]; }
+    saveCalendar(cal); schedulePush(); renderPlanMatrix();
+  };
+  inp.addEventListener('blur', save);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') save(); if(e.key==='Escape') renderPlanMatrix(); });
+}
+
+// Toggle exam marker
+function toggleExam(ds) {
+  const cal=loadCalendar();
+  if (!cal[ds]) cal[ds]={};
+  if (cal[ds].exam) { delete cal[ds].exam; if (!cal[ds].avail) delete cal[ds]; }
+  else { cal[ds].exam=true; }
+  saveCalendar(cal); schedulePush(); renderPlanMatrix();
+}
+
+// Inline edit: task hours cell
+function editCell(taskId, ds, td) {
+  if (td.querySelector('input')) return;
+  const logs=loadLogs();
+  const cur=(logs[taskId]&&logs[taskId][ds])||0;
+  const inp=document.createElement('input');
+  inp.type='number'; inp.min='0'; inp.max='24'; inp.step='0.25';
+  inp.value=cur||''; inp.className='cell-input';
+  td.innerHTML=''; td.appendChild(inp); inp.focus(); inp.select();
+  const save=()=>{
+    const v=parseFloat(inp.value);
+    if (!logs[taskId]) logs[taskId]={};
+    if (!isNaN(v)&&v>0) { logs[taskId][ds]=v; }
+    else { delete logs[taskId][ds]; }
+    saveLogs(logs); schedulePush(); renderPlanMatrix();
+  };
+  inp.addEventListener('blur', save);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') save(); if(e.key==='Escape') renderPlanMatrix(); });
 }
 
 // ─── SUMMARY ──────────────────────────────────────────────────────────────────
 function hoursInRange(taskId, from, to) {
-  const logs = loadLogs();
+  const logs=loadLogs();
   if (!logs[taskId]) return 0;
-  return Object.entries(logs[taskId]).reduce((sum,[d,h])=>{
-    return (!from||d>=from) && (!to||d<=to) ? sum+h : sum;
-  }, 0);
+  return Object.entries(logs[taskId]).reduce((sum,[d,h])=>(!from||d>=from)&&(!to||d<=to)?sum+h:sum, 0);
 }
-
 function renderSummary() {
-  const from = document.getElementById('filterFrom').value||null;
-  const to   = document.getElementById('filterTo').value||null;
-  const tasks = loadTasks();
-  let totalH=0, totalE=0, doneCount=0;
-  const subjH = {};
+  const from=document.getElementById('filterFrom').value||null;
+  const to=document.getElementById('filterTo').value||null;
+  const tasks=loadTasks();
+  let totalH=0,totalE=0,doneCount=0;
+  const subjH={};
   for (const t of tasks) {
-    const h = hoursInRange(t.id, from, to);
-    totalH += h; totalE += t.estimatedHours||0;
+    const h=hoursInRange(t.id,from,to);
+    totalH+=h; totalE+=t.estimatedHours||0;
     if (t.status==='ok') doneCount++;
-    subjH[t.subject.trim()] = (subjH[t.subject.trim()]||0) + h;
+    subjH[t.subject.trim()]=(subjH[t.subject.trim()]||0)+h;
   }
-  const pct = totalE>0 ? Math.round(totalH/totalE*100) : 0;
-
-  document.getElementById('statsGrid').innerHTML = `
+  const pct=totalE>0?Math.round(totalH/totalE*100):0;
+  document.getElementById('statsGrid').innerHTML=`
     <div class="stat-box"><div class="stat-value">${totalH.toFixed(1)}</div><div class="stat-label">Hores registrades</div></div>
     <div class="stat-box"><div class="stat-value">${pct}%</div><div class="stat-label">% completat</div></div>
     <div class="stat-box"><div class="stat-value">${doneCount}/${tasks.length}</div><div class="stat-label">Tasques fetes</div></div>
     <div class="stat-box"><div class="stat-value">${Math.max(0,totalE-totalH).toFixed(1)}</div><div class="stat-label">Hores restants</div></div>`;
-
-  const maxH = Math.max(...Object.values(subjH), 1);
-  document.getElementById('subjectStats').innerHTML = Object.entries(subjH)
-    .sort((a,b)=>b[1]-a[1])
-    .map(([s,h])=>{
-      const c = COLORS[getSubjectColor(s)];
-      return `<div style="margin-bottom:12px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <span><span class="dot" style="background:${c}"></span>${esc(s)}</span>
-          <span style="font-weight:600;color:var(--blue)">${h.toFixed(1)}h</span>
-        </div>
-        <div class="progress-bar" style="height:8px;">
-          <div class="progress-fill" style="width:${Math.round(h/maxH*100)}%;background:${c}"></div>
-        </div></div>`;
-    }).join('') || '<div class="empty">Sense dades</div>';
-
-  document.getElementById('taskProgress').innerHTML = tasks.map(t=>{
-    const done = hoursInRange(t.id, from, to);
-    if (!done && !t.estimatedHours) return '';
-    const pctT = t.estimatedHours>0 ? Math.min(100,Math.round(done/t.estimatedHours*100)) : 0;
-    const c = COLORS[getSubjectColor(t.subject)];
+  const maxH=Math.max(...Object.values(subjH),1);
+  document.getElementById('subjectStats').innerHTML=Object.entries(subjH).sort((a,b)=>b[1]-a[1]).map(([s,h])=>{
+    const c=COLORS[getSubjectColor(s)];
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+        <span><span class="dot" style="background:${c}"></span>${esc(s)}</span>
+        <span style="font-weight:600;color:var(--blue)">${h.toFixed(1)}h</span>
+      </div>
+      <div class="progress-bar" style="height:8px;"><div class="progress-fill" style="width:${Math.round(h/maxH*100)}%;background:${c}"></div></div></div>`;
+  }).join('')||'<div class="empty">Sense dades</div>';
+  document.getElementById('taskProgress').innerHTML=tasks.map(t=>{
+    const done=hoursInRange(t.id,from,to);
+    if (!done&&!t.estimatedHours) return '';
+    const pctT=t.estimatedHours>0?Math.min(100,Math.round(done/t.estimatedHours*100)):0;
+    const c=COLORS[getSubjectColor(t.subject)];
     return `<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
         <div>${colorDot(t.subject)}<strong>${esc(t.subject)}</strong>
@@ -984,23 +1330,20 @@ function renderSummary() {
         </div>
         <span style="font-size:12px;color:var(--gray-600)">${done.toFixed(1)} / ${t.estimatedHours||'?'}h</span>
       </div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width:${pctT}%;background:${pctT>=100?'var(--green)':c}"></div>
-      </div></div>`;
-  }).join('') || '<div class="empty">Sense dades</div>';
+      <div class="progress-bar"><div class="progress-fill" style="width:${pctT}%;background:${pctT>=100?'var(--green)':c}"></div></div></div>`;
+  }).join('')||'<div class="empty">Sense dades</div>';
 }
-
 function setWeekFilter() {
   const now=new Date(), day=now.getDay()||7, mon=new Date(now);
   mon.setDate(now.getDate()-day+1);
-  document.getElementById('filterFrom').value = mon.toISOString().slice(0,10);
-  document.getElementById('filterTo').value   = now.toISOString().slice(0,10);
+  document.getElementById('filterFrom').value=mon.toISOString().slice(0,10);
+  document.getElementById('filterTo').value=now.toISOString().slice(0,10);
   renderSummary();
 }
 function setMonthFilter() {
   const now=new Date();
-  document.getElementById('filterFrom').value = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
-  document.getElementById('filterTo').value   = now.toISOString().slice(0,10);
+  document.getElementById('filterFrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  document.getElementById('filterTo').value=now.toISOString().slice(0,10);
   renderSummary();
 }
 function clearFilter() {
@@ -1011,52 +1354,49 @@ function clearFilter() {
 
 // ─── EXPORT ───────────────────────────────────────────────────────────────────
 function exportExcel() {
-  const tasks = loadTasks(), logs = loadLogs();
-  const from = document.getElementById('exportFrom').value||null;
-  const to   = document.getElementById('exportTo').value||null;
-  const dateSet = new Set();
+  const tasks=loadTasks(), logs=loadLogs();
+  const from=document.getElementById('exportFrom').value||null;
+  const to=document.getElementById('exportTo').value||null;
+  const dateSet=new Set();
   for (const tl of Object.values(logs))
     for (const d of Object.keys(tl))
       if ((!from||d>=from)&&(!to||d<=to)) dateSet.add(d);
-  const dates = [...dateSet].sort();
+  const dates=[...dateSet].sort();
   if (!tasks.length) return showToast('No hi ha tasques');
-
-  const header = ['Matèria','Tema','A/P','Detall','Estat','Previsió','Total',
+  const header=['Matèria','Tema','A/P','Detall','Estat','Previsió','Total',
     ...dates.map(d=>{ const [,m,day]=d.split('-'); return `${parseInt(day)}/${parseInt(m)}`; })];
-  const rows = tasks.map(t=>{
-    const dh = dates.map(d=>(logs[t.id]&&logs[t.id][d])||0);
-    return [t.subject, t.topic||'', t.type||'', t.detail||'',
-            t.status==='ok'?'ok':'', t.estimatedHours||0,
-            dh.reduce((a,b)=>a+b,0), ...dh];
+  const rows=tasks.map(t=>{
+    const dh=dates.map(d=>(logs[t.id]&&logs[t.id][d])||0);
+    return [t.subject,t.topic||'',t.type||'',t.detail||'',t.status==='ok'?'ok':'',t.estimatedHours||0,dh.reduce((a,b)=>a+b,0),...dh];
   });
-
-  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
-  ws['!cols'] = [{wch:14},{wch:12},{wch:12},{wch:12},{wch:7},{wch:7},{wch:6},...dates.map(()=>({wch:5}))];
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'Tracker');
-  XLSX.writeFile(wb, `tracker_${(from||'inici').replace(/-/g,'')}_${(to||'avui').replace(/-/g,'')}.xlsx`);
+  const ws=XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols']=[{wch:14},{wch:12},{wch:12},{wch:12},{wch:7},{wch:7},{wch:6},...dates.map(()=>({wch:5}))];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Tracker');
+  XLSX.writeFile(wb,`tracker_${(from||'inici').replace(/-/g,'')}_${(to||'avui').replace(/-/g,'')}.xlsx`);
   showToast('✓ Excel descarregat');
 }
 
 function exportJSON() {
-  const blob = new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),tasks:loadTasks(),logs:loadLogs()},null,2)],{type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = `uni_tracker_${todayStr()}.json`; a.click();
+  const blob=new Blob([JSON.stringify({version:2,exportedAt:new Date().toISOString(),tasks:loadTasks(),logs:loadLogs(),calendar:loadCalendar()},null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`uni_tracker_${todayStr()}.json`; a.click();
   showToast('✓ Backup exportat');
 }
 
 function importJSON(e) {
-  const file = e.target.files[0]; if (!file) return;
-  const reader = new FileReader();
-  reader.onload = ev => {
+  const file=e.target.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
     try {
-      const data = JSON.parse(ev.target.result);
-      if (!data.tasks||!data.logs) throw '';
-      if (!confirm(`Importar ${data.tasks.length} tasques? Sobreescriurà les dades actuals.`)) return;
-      saveTasks(data.tasks); saveLogs(data.logs);
-      refreshTaskSelects(); renderTodayLog();
-      schedulePush();
-      showToast(`✓ ${data.tasks.length} tasques importades`);
+      const data=JSON.parse(ev.target.result);
+      if (!data.tasks) throw '';
+      if (!confirm(`Restaurar backup amb ${data.tasks.length} tasques? Sobreescriurà les dades actuals.`)) return;
+      saveTasks(data.tasks);
+      if (data.logs) saveLogs(data.logs);
+      if (data.calendar) saveCalendar(data.calendar);
+      refreshTaskSelects(); renderTodayLog(); schedulePush();
+      showToast(`✓ Backup restaurat (${data.tasks.length} tasques)`);
     } catch { showToast('Error: fitxer invàlid'); }
   };
   reader.readAsText(file); e.target.value='';
@@ -1065,7 +1405,7 @@ function importJSON(e) {
 function clearAllData() {
   if (!confirm('Segur? S\'esborraran TOTES les dades.')) return;
   if (!confirm('Última confirmació.')) return;
-  [LS_TASKS,LS_LOGS].forEach(k=>localStorage.removeItem(k));
+  [LS_TASKS,LS_LOGS,LS_CAL].forEach(k=>localStorage.removeItem(k));
   if (hasSyncConfig()) pushToCloud();
   refreshTaskSelects(); renderTodayLog();
   showToast('Dades esborrades');
@@ -1079,58 +1419,47 @@ function showToast(msg) {
   t.textContent=msg; t.classList.add('show');
   setTimeout(()=>t.classList.remove('show'),2500);
 }
-
 function refreshTaskSelects() {
-  const tasks = loadTasks();
-  const opts = '<option value="">— Selecciona —</option>' +
+  const tasks=loadTasks();
+  const opts='<option value="">— Selecciona —</option>'+
     tasks.map(t=>`<option value="${t.id}">${esc(t.subject)}${t.topic?' · '+t.topic:''}${t.type?' · '+t.type:''}</option>`).join('');
-  document.getElementById('timerTask').innerHTML = opts;
-  document.getElementById('manualTask').innerHTML = opts;
+  document.getElementById('timerTask').innerHTML=opts;
+  document.getElementById('manualTask').innerHTML=opts;
 }
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 async function init() {
-  const now = new Date();
-  const days = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
-  const months = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
-  document.getElementById('headerDate').textContent =
+  const now=new Date();
+  const days=['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
+  const months=['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+  document.getElementById('headerDate').textContent=
     `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
-
-  document.getElementById('manualDate').value = todayStr();
-  document.getElementById('exportFrom').value = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
-  document.getElementById('exportTo').value   = todayStr();
-
+  document.getElementById('manualDate').value=todayStr();
+  document.getElementById('exportFrom').value=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  document.getElementById('exportTo').value=todayStr();
   loadTasks().forEach(t=>getSubjectColor(t.subject));
-
-  const skip = localStorage.getItem(LS_SKIP);
-  const configured = hasSyncConfig();
-
+  const skip=localStorage.getItem(LS_SKIP);
+  const configured=hasSyncConfig();
   if (configured) {
-    showApp();
-    refreshTaskSelects();
-    await pullFromCloud(); // pull latest data on every load
-    refreshTaskSelects();
-    renderTodayLog();
+    showApp(); refreshTaskSelects();
+    await pullFromCloud();
+    refreshTaskSelects(); renderTodayLog();
   } else if (skip) {
-    showApp();
-    refreshTaskSelects();
-    renderTodayLog();
+    showApp(); refreshTaskSelects(); renderTodayLog();
   } else {
     showSetup();
   }
-
-  // Also populate setup fields if returning there
   if (configured) {
-    const {key, binId} = getSyncCreds();
-    document.getElementById('settingsApiKey').value = key;
-    document.getElementById('settingsBinId').value  = binId;
+    const {key,binId}=getSyncCreds();
+    document.getElementById('settingsApiKey').value=key;
+    document.getElementById('settingsBinId').value=binId;
   }
 }
 
-document.getElementById('taskModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeTaskModal(); });
-document.getElementById('manualDate').addEventListener('change', renderTodayLog);
-document.getElementById('filterFrom').addEventListener('change', renderSummary);
-document.getElementById('filterTo').addEventListener('change', renderSummary);
+document.getElementById('taskModal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeTaskModal(); });
+document.getElementById('manualDate').addEventListener('change',renderTodayLog);
+document.getElementById('filterFrom').addEventListener('change',renderSummary);
+document.getElementById('filterTo').addEventListener('change',renderSummary);
 
 init();
 </script>

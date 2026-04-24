@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="ca">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Uni Tracker — Víctor</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #1a56db;
+      --blue-dark: #1040b0;
+      --blue-light: #e8f0fe;
+      --green: #0e9f6e;
+      --green-light: #def7ec;
+      --orange: #ff8800;
+      --orange-light: #fff3e0;
+      --red: #e02424;
+      --red-light: #fde8e8;
+      --gray-50: #f9fafb;
+      --gray-100: #f3f4f6;
+      --gray-200: #e5e7eb;
+      --gray-400: #9ca3af;
+      --gray-600: #4b5563;
+      --gray-800: #1f2937;
+      --white: #ffffff;
+      --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+      font-size: 14px;
+    }
+
+    .header {
+      background: var(--blue);
+      color: white;
+      padding: 0 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-title { font-size: 16px; font-weight: 600; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .header-date { font-size: 12px; opacity: 0.8; }
+    .sync-pill {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      border: none;
+      transition: background 0.15s;
+    }
+    .sync-pill.ok { background: rgba(255,255,255,0.2); color: white; }
+    .sync-pill.ok:hover { background: rgba(255,255,255,0.3); }
+    .sync-pill.error { background: rgba(224,36,36,0.7); color: white; }
+    .sync-pill.off { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+    .sync-pill.syncing { background: rgba(255,200,0,0.3); color: white; }
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; }
+    .sync-dot.ok { background: #4ade80; }
+    .sync-dot.error { background: #fca5a5; }
+    .sync-dot.off { background: rgba(255,255,255,0.4); }
+    .sync-dot.syncing { background: #fde68a; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .nav { background: white; border-bottom: 1px solid var(--gray-200); display: flex; overflow-x: auto; }
+    .nav-btn {
+      padding: 12px 20px;
+      border: none; background: none; cursor: pointer;
+      font-size: 13px; font-weight: 500; color: var(--gray-600);
+      border-bottom: 2px solid transparent;
+      white-space: nowrap; transition: all 0.15s;
+    }
+    .nav-btn:hover { color: var(--blue); }
+    .nav-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+
+    .main { max-width: 860px; margin: 0 auto; padding: 20px 16px; }
+
+    .card { background: white; border-radius: 10px; box-shadow: var(--shadow); margin-bottom: 16px; overflow: hidden; }
+    .card-header { padding: 14px 18px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+    .card-title { font-size: 14px; font-weight: 600; }
+    .card-body { padding: 16px 18px; }
+
+    .btn { padding: 7px 14px; border-radius: 7px; border: none; cursor: pointer; font-size: 13px; font-weight: 500; transition: all 0.15s; display: inline-flex; align-items: center; gap: 5px; }
+    .btn-primary { background: var(--blue); color: white; }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-success { background: var(--green); color: white; }
+    .btn-success:hover { background: #0a7a55; }
+    .btn-ghost { background: var(--gray-100); color: var(--gray-800); }
+    .btn-ghost:hover { background: var(--gray-200); }
+    .btn-danger { background: var(--red-light); color: var(--red); }
+    .btn-danger:hover { background: #fcc; }
+    .btn-sm { padding: 4px 9px; font-size: 12px; }
+    .btn-icon { padding: 5px 7px; background: none; border: none; cursor: pointer; color: var(--gray-400); font-size: 15px; transition: color 0.15s; }
+    .btn-icon:hover { color: var(--gray-800); }
+
+    .form-group { margin-bottom: 12px; }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .form-row .form-group { flex: 1; min-width: 120px; }
+    label { display: block; font-size: 12px; font-weight: 500; color: var(--gray-600); margin-bottom: 4px; }
+    input, select, textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--gray-200); border-radius: 7px; font-size: 13px; color: var(--gray-800); background: white; transition: border 0.15s; outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(26,86,219,0.1); }
+    input[type="number"] { -moz-appearance: textfield; }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 9px 12px; font-size: 11px; font-weight: 600; color: var(--gray-600); text-transform: uppercase; letter-spacing: 0.5px; background: var(--gray-50); border-bottom: 1px solid var(--gray-200); }
+    td { padding: 9px 12px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--gray-50); }
+
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+    .badge-ok { background: var(--green-light); color: var(--green); }
+    .badge-pending { background: var(--orange-light); color: var(--orange); }
+    .badge-blue { background: var(--blue-light); color: var(--blue); }
+
+    .progress-wrap { display: flex; align-items: center; gap: 8px; }
+    .progress-bar { flex: 1; height: 6px; background: var(--gray-200); border-radius: 99px; overflow: hidden; }
+    .progress-fill { height: 100%; border-radius: 99px; transition: width 0.4s; }
+    .progress-label { font-size: 11px; color: var(--gray-600); min-width: 35px; text-align: right; }
+
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+    .stat-box { background: white; border-radius: 10px; padding: 16px; box-shadow: var(--shadow); text-align: center; }
+    .stat-value { font-size: 26px; font-weight: 700; color: var(--blue); }
+    .stat-label { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+
+    .timer-display { font-size: 48px; font-weight: 700; color: var(--blue); font-variant-numeric: tabular-nums; letter-spacing: -1px; text-align: center; padding: 20px 0 10px; }
+    .timer-controls { display: flex; gap: 10px; justify-content: center; margin-bottom: 16px; }
+    .timer-task-label { text-align: center; font-size: 13px; color: var(--gray-600); margin-bottom: 4px; }
+
+    .log-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+    .log-item:last-child { border-bottom: none; }
+    .log-subject { font-weight: 600; font-size: 13px; }
+    .log-detail { font-size: 11px; color: var(--gray-400); }
+    .log-hours { font-size: 14px; font-weight: 600; color: var(--blue); }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+    .empty { text-align: center; padding: 32px; color: var(--gray-400); font-size: 13px; }
+    .empty-icon { font-size: 32px; margin-bottom: 8px; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay.open { display: flex; }
+    .modal { background: white; border-radius: 12px; width: 100%; max-width: 500px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .modal-header { padding: 16px 20px; border-bottom: 1px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; }
+    .modal-title { font-size: 15px; font-weight: 600; }
+    .modal-body { padding: 20px; }
+    .modal-footer { padding: 14px 20px; border-top: 1px solid var(--gray-100); display: flex; justify-content: flex-end; gap: 8px; }
+
+    .toast { position: fixed; bottom: 20px; right: 20px; background: var(--gray-800); color: white; padding: 10px 16px; border-radius: 8px; font-size: 13px; z-index: 300; opacity: 0; transition: opacity 0.3s; pointer-events: none; }
+    .toast.show { opacity: 1; }
+
+    /* Setup screen */
+    .setup-screen { max-width: 500px; margin: 40px auto; padding: 0 16px; }
+    .setup-logo { font-size: 48px; text-align: center; margin-bottom: 12px; }
+    .setup-title { font-size: 22px; font-weight: 700; text-align: center; margin-bottom: 6px; }
+    .setup-sub { font-size: 14px; color: var(--gray-600); text-align: center; margin-bottom: 28px; line-height: 1.5; }
+    .step-badge { display: inline-flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: var(--blue); color: white; font-size: 12px; font-weight: 700; margin-right: 8px; flex-shrink: 0; }
+    .setup-step { display: flex; align-items: flex-start; margin-bottom: 14px; font-size: 13px; line-height: 1.5; color: var(--gray-600); }
+    .setup-step a { color: var(--blue); text-decoration: none; font-weight: 500; }
+    .setup-step a:hover { text-decoration: underline; }
+    .setup-skip { text-align: center; margin-top: 16px; font-size: 12px; color: var(--gray-400); }
+    .setup-skip a { color: var(--blue); cursor: pointer; text-decoration: none; }
+    .setup-skip a:hover { text-decoration: underline; }
+    .info-box { background: var(--blue-light); border-radius: 8px; padding: 11px 13px; font-size: 12px; color: var(--blue-dark); margin-bottom: 16px; line-height: 1.5; }
+
+    @media (max-width: 500px) {
+      .main { padding: 12px 10px; }
+      .nav-btn { padding: 10px 14px; font-size: 12px; }
+      .form-row { flex-direction: column; }
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .timer-display { font-size: 36px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setupScreen" style="display:none; background:var(--gray-50); min-height:100vh; padding-top:20px;">
+  <div class="setup-screen">
+    <div class="setup-logo">📚</div>
+    <div class="setup-title">Uni Tracker</div>
+    <div class="setup-sub">Configura el sync automàtic per accedir des de qualsevol dispositiu. Només cal fer-ho una vegada per dispositiu.</div>
+
+    <div class="card">
+      <div class="card-header"><span class="card-title">Configuració de sync (JSONBin)</span></div>
+      <div class="card-body">
+        <div class="info-box">
+          JSONBin és un servei gratuït que guarda les teves dades al núvol. Funciona com una base de dades simple, accessible des de qualsevol dispositiu.
+        </div>
+
+        <div class="setup-step"><span class="step-badge">1</span><div>Ves a <a href="https://jsonbin.io" target="_blank">jsonbin.io</a> i crea un compte gratuït (botó "Sign Up")</div></div>
+        <div class="setup-step"><span class="step-badge">2</span><div>Un cop dins, ves a <strong>API Keys</strong> al menú de l'esquerra → copia la teva <strong>Secret Key</strong></div></div>
+        <div class="setup-step"><span class="step-badge">3</span><div>Enganxa la clau aquí sota i fes clic a "Connectar" — la resta ho fa l'app automàticament.</div></div>
+
+        <div class="form-group">
+          <label>Secret Key (Master Key)</label>
+          <input type="password" id="setupApiKey" placeholder="$2a$10$...">
+        </div>
+        <div id="setupBinId" style="display:none"></div>
+
+        <div style="display:flex; gap:10px; margin-top:4px; flex-wrap:wrap;">
+          <button class="btn btn-primary" id="setupConnectBtn" onclick="saveSync()">Connectar</button>
+          <span id="setupSpinner" style="display:none; font-size:13px; color:var(--gray-600); align-self:center;">⏳ Creant base de dades…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="setup-skip">
+      <a onclick="skipSync()">Continuar sense sync (un sol dispositiu)</a>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" style="display:none;">
+
+  <div class="header">
+    <div class="header-title">📚 Uni Tracker</div>
+    <div class="header-right">
+      <button class="sync-pill off" id="syncPill" onclick="switchTab('settings')">
+        <span class="sync-dot off" id="syncDot"></span>
+        <span id="syncLabel">Sense sync</span>
+      </button>
+      <div class="header-date" id="headerDate"></div>
+    </div>
+  </div>
+
+  <div class="nav">
+    <button class="nav-btn active" data-tab="log" onclick="switchTab('log')">⏱ Registrar</button>
+    <button class="nav-btn" data-tab="tasks" onclick="switchTab('tasks')">📋 Tasques</button>
+    <button class="nav-btn" data-tab="summary" onclick="switchTab('summary')">📊 Resum</button>
+    <button class="nav-btn" data-tab="export" onclick="switchTab('export')">⬇ Exportar</button>
+    <button class="nav-btn" data-tab="settings" onclick="switchTab('settings')">⚙ Sync</button>
+  </div>
+
+  <div class="main">
+
+    <!-- LOG TAB -->
+    <div class="tab-content active" id="tab-log">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">⏱ Temporitzador</span>
+          <select id="timerTask" style="width:auto; max-width:240px; font-size:12px;" onchange="updateTimerLabel()">
+            <option value="">— Selecciona tasca —</option>
+          </select>
+        </div>
+        <div class="card-body" style="padding: 4px 18px 20px;">
+          <div class="timer-task-label" id="timerTaskLabel">Cap tasca seleccionada</div>
+          <div class="timer-display" id="timerDisplay">00:00:00</div>
+          <div class="timer-controls">
+            <button class="btn btn-primary" id="timerStartBtn" onclick="startTimer()">▶ Iniciar</button>
+            <button class="btn btn-ghost" id="timerPauseBtn" onclick="pauseTimer()" style="display:none">⏸ Pausar</button>
+            <button class="btn btn-ghost" id="timerStopBtn" onclick="stopTimer()" style="display:none">⏹ Aturar i guardar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">✏️ Afegir hores manualment</span></div>
+        <div class="card-body">
+          <div class="form-row">
+            <div class="form-group" style="flex:2">
+              <label>Tasca</label>
+              <select id="manualTask"><option value="">— Selecciona —</option></select>
+            </div>
+            <div class="form-group" style="flex:0.8">
+              <label>Hores</label>
+              <input type="number" id="manualHours" placeholder="1.5" min="0.25" max="24" step="0.25">
+            </div>
+            <div class="form-group" style="flex:1">
+              <label>Data</label>
+              <input type="date" id="manualDate">
+            </div>
+          </div>
+          <button class="btn btn-primary" onclick="logManual()">+ Guardar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title" id="todayLogTitle">Registrat avui</span>
+          <span id="todayTotal" style="font-size:13px; font-weight:600; color:var(--blue)"></span>
+        </div>
+        <div class="card-body" style="padding:0 18px;">
+          <div id="todayLogs"><div class="empty"><div class="empty-icon">📭</div>Res registrat avui</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TASKS TAB -->
+    <div class="tab-content" id="tab-tasks">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📋 Totes les tasques</span>
+          <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Nova tasca</button>
+        </div>
+        <div class="card-body" style="padding:0;">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Assignatura</th><th>Tema</th><th>Tipus</th><th>Detall</th>
+                  <th>Estat</th><th>Previst</th><th>Fet</th><th>%</th><th></th>
+                </tr>
+              </thead>
+              <tbody id="tasksTableBody"><tr><td colspan="9" class="empty">Cap tasca</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY TAB -->
+    <div class="tab-content" id="tab-summary">
+      <div class="card">
+        <div class="card-body" style="padding:12px 18px;">
+          <div class="form-row" style="align-items:flex-end; margin-bottom:0;">
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Des de</label>
+              <input type="date" id="filterFrom">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label>Fins a</label>
+              <input type="date" id="filterTo">
+            </div>
+            <div style="padding-bottom:1px; display:flex; gap:6px; flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" onclick="setWeekFilter()">Setmana</button>
+              <button class="btn btn-ghost btn-sm" onclick="setMonthFilter()">Mes</button>
+              <button class="btn btn-ghost btn-sm" onclick="clearFilter()">Tot</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stats-grid" id="statsGrid" style="margin-bottom:16px;"></div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Hores per assignatura</span></div>
+        <div class="card-body" id="subjectStats"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">Progrés per tasca</span></div>
+        <div class="card-body" style="padding:0 18px;"><div id="taskProgress"></div></div>
+      </div>
+    </div>
+
+    <!-- EXPORT TAB -->
+    <div class="tab-content" id="tab-export">
+      <div class="card">
+        <div class="card-header"><span class="card-title">📥 Exportar a Excel</span></div>
+        <div class="card-body">
+          <p style="font-size:13px; color:var(--gray-600); margin-bottom:12px;">
+            Genera un Excel amb el mateix format que feies servir: assignatures com a files, dies com a columnes.
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Des de</label>
+              <input type="date" id="exportFrom">
+            </div>
+            <div class="form-group">
+              <label>Fins a</label>
+              <input type="date" id="exportTo">
+            </div>
+          </div>
+          <button class="btn btn-success" onclick="exportExcel()">⬇ Descarregar Excel</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">🔄 Backup manual</span></div>
+        <div class="card-body">
+          <p style="font-size:13px; color:var(--gray-600); margin-bottom:12px;">
+            Exporta una còpia de seguretat com a fitxer JSON.
+          </p>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="exportJSON()">📤 Exportar JSON</button>
+            <label class="btn btn-ghost" style="cursor:pointer;">
+              📂 Importar JSON
+              <input type="file" accept=".json" style="display:none;" onchange="importJSON(event)">
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div class="tab-content" id="tab-settings">
+      <div class="card" id="syncStatusCard">
+        <div class="card-header"><span class="card-title">🔄 Sync automàtic (JSONBin)</span></div>
+        <div class="card-body">
+          <div id="syncStatusInfo" style="font-size:13px; color:var(--gray-600); margin-bottom:14px;"></div>
+          <div class="form-group">
+            <label>Secret Key</label>
+            <input type="password" id="settingsApiKey" placeholder="$2a$10$...">
+          </div>
+          <div class="form-group">
+            <label>Bin ID <span style="font-size:11px;color:var(--gray-400)">(creat automàticament)</span></label>
+            <input type="text" id="settingsBinId" placeholder="6448a1..." readonly style="background:var(--gray-50);color:var(--gray-400);">
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="saveSync()">Reconnectar amb nova clau</button>
+            <button class="btn btn-ghost" onclick="forcePull()">↓ Forçar descàrrega</button>
+            <button class="btn btn-danger btn-sm" onclick="disconnectSync()">Desconnectar</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">⚠️ Zona perillosa</span></div>
+        <div class="card-body">
+          <p style="font-size:13px; color:var(--gray-600); margin-bottom:12px;">Esborra totes les dades locals i del cloud.</p>
+          <button class="btn btn-danger" onclick="clearAllData()">🗑 Esborrar totes les dades</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">ℹ️ Com funciona el sync</span></div>
+        <div class="card-body" style="font-size:13px; color:var(--gray-600); line-height:1.7;">
+          <p>Cada vegada que guardes una tasca o registres hores, l'app puja les dades a JSONBin automàticament.</p>
+          <p style="margin-top:8px;">Al carregar l'app en qualsevol dispositiu, descarrega les dades del cloud. Així sempre tens la versió més recent.</p>
+          <p style="margin-top:8px;">Les dades també es guarden localment per si no tens connexió.</p>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+</div><!-- /appScreen -->
+
+<!-- TASK MODAL -->
+<div class="modal-overlay" id="taskModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="taskModalTitle">Nova tasca</span>
+      <button class="btn-icon" onclick="closeTaskModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editTaskId">
+      <div class="form-row">
+        <div class="form-group" style="flex:2">
+          <label>Assignatura *</label>
+          <input type="text" id="taskSubject" placeholder="Càlcul, Física, Alemán…" list="subjectSuggestions">
+          <datalist id="subjectSuggestions"></datalist>
+        </div>
+        <div class="form-group" style="flex:1.5">
+          <label>Tema</label>
+          <input type="text" id="taskTopic" placeholder="T1, Matlab, Parcials…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tipus (A/P)</label>
+          <select id="taskType">
+            <option value="">—</option>
+            <option>Apunts</option>
+            <option>Problemes</option>
+            <option>Matlab</option>
+            <option>Repasar</option>
+            <option>Examen</option>
+            <option>Treball</option>
+            <option>Pràctica</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Detall</label>
+          <input type="text" id="taskDetail" placeholder="Resum, Parcials…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Hores previstes</label>
+          <input type="number" id="taskEstimated" placeholder="5" min="0" step="0.5">
+        </div>
+        <div class="form-group">
+          <label>Estat</label>
+          <select id="taskStatus">
+            <option value="">Pendent</option>
+            <option value="ok">✓ Fet</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeTaskModal()">Cancel·lar</button>
+      <button class="btn btn-primary" onclick="saveTask()">Guardar tasca</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ─── STORAGE KEYS ─────────────────────────────────────────────────────────────
+const LS_TASKS    = 'ut_tasks';
+const LS_LOGS     = 'ut_logs';
+const LS_API_KEY  = 'ut_apikey';
+const LS_BIN_ID   = 'ut_binid';
+const LS_SKIP     = 'ut_skip';
+
+// ─── LOCAL STORAGE ────────────────────────────────────────────────────────────
+function loadTasks() { try { return JSON.parse(localStorage.getItem(LS_TASKS)) || []; } catch { return []; } }
+function saveTasks(t) { localStorage.setItem(LS_TASKS, JSON.stringify(t)); }
+function loadLogs()  { try { return JSON.parse(localStorage.getItem(LS_LOGS))  || {}; } catch { return {}; } }
+function saveLogs(l) { localStorage.setItem(LS_LOGS,  JSON.stringify(l)); }
+function getSyncCreds() { return { key: localStorage.getItem(LS_API_KEY) || '', binId: localStorage.getItem(LS_BIN_ID) || '' }; }
+function hasSyncConfig() { const c = getSyncCreds(); return !!(c.key && c.binId); }
+
+// ─── JSONBIN SYNC ─────────────────────────────────────────────────────────────
+let syncPending = false;
+let syncTimer = null;
+
+async function pushToCloud() {
+  if (!hasSyncConfig()) return;
+  const { key, binId } = getSyncCreds();
+  setSyncStatus('syncing', 'Guardant…');
+  try {
+    const data = { tasks: loadTasks(), logs: loadLogs(), updatedAt: new Date().toISOString() };
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
+      body: JSON.stringify(data)
+    });
+    if (!res.ok) throw new Error(await res.text());
+    setSyncStatus('ok', 'Sincronitzat');
+  } catch (e) {
+    setSyncStatus('error', 'Error sync');
+    console.error('Sync push error:', e);
+  }
+}
+
+async function pullFromCloud() {
+  if (!hasSyncConfig()) return;
+  const { key, binId } = getSyncCreds();
+  setSyncStatus('syncing', 'Carregant…');
+  try {
+    const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: { 'X-Master-Key': key }
+    });
+    if (!res.ok) throw new Error(await res.text());
+    const json = await res.json();
+    const data = json.record;
+    if (data.tasks) saveTasks(data.tasks);
+    if (data.logs)  saveLogs(data.logs);
+    setSyncStatus('ok', 'Sincronitzat');
+    refreshTaskSelects();
+    renderTodayLog();
+    return true;
+  } catch (e) {
+    setSyncStatus('error', 'Error sync');
+    console.error('Sync pull error:', e);
+    return false;
+  }
+}
+
+// Debounced push — waits 2s after last save before pushing
+function schedulePush() {
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushToCloud, 2000);
+}
+
+function setSyncStatus(state, label) {
+  const pill = document.getElementById('syncPill');
+  const dot  = document.getElementById('syncDot');
+  const lbl  = document.getElementById('syncLabel');
+  if (!pill) return;
+  pill.className = `sync-pill ${state}`;
+  dot.className  = `sync-dot ${state}`;
+  lbl.textContent = label;
+}
+
+async function saveSync() {
+  const keyInput = document.getElementById('setupApiKey') || document.getElementById('settingsApiKey');
+  const key = keyInput.value.trim();
+  if (!key) return showToast('Cal enganxar la Secret Key');
+
+  // Show spinner
+  const btn = document.getElementById('setupConnectBtn');
+  const spinner = document.getElementById('setupSpinner');
+  if (btn) btn.style.display = 'none';
+  if (spinner) spinner.style.display = 'inline';
+  setSyncStatus('syncing', 'Connectant…');
+
+  try {
+    // Check if we already have a bin for this key
+    let binId = localStorage.getItem(LS_BIN_ID);
+
+    if (!binId) {
+      // Create a new bin automatically
+      const createRes = await fetch('https://api.jsonbin.io/v3/b', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': key,
+          'X-Bin-Name': 'Uni Tracker'
+        },
+        body: JSON.stringify({ tasks: [], logs: {}, createdAt: new Date().toISOString() })
+      });
+      if (!createRes.ok) {
+        const err = await createRes.text();
+        throw new Error('Error creant bin: ' + err);
+      }
+      const createData = await createRes.json();
+      binId = createData.metadata.id;
+    }
+
+    localStorage.setItem(LS_API_KEY, key);
+    localStorage.setItem(LS_BIN_ID, binId);
+    localStorage.removeItem(LS_SKIP);
+
+    document.getElementById('settingsApiKey').value = key;
+    document.getElementById('settingsBinId').value  = binId;
+
+    // Pull existing data (in case reconnecting on second device)
+    await pullFromCloud();
+    showToast('✓ Sync configurat!');
+    showApp();
+    switchTab('log');
+  } catch(e) {
+    setSyncStatus('error', 'Error');
+    showToast('Error: ' + (e.message || 'Revisa la Secret Key'));
+    console.error(e);
+    if (btn) btn.style.display = '';
+    if (spinner) spinner.style.display = 'none';
+  }
+}
+
+async function forcePull() {
+  await pullFromCloud();
+  renderTodayLog();
+  renderTasksTable();
+  showToast('Dades actualitzades des del cloud');
+}
+
+function disconnectSync() {
+  if (!confirm('Es desconnectarà el sync. Les dades locals es mantenen.')) return;
+  localStorage.removeItem(LS_API_KEY);
+  localStorage.removeItem(LS_BIN_ID);
+  localStorage.setItem(LS_SKIP, '1');
+  setSyncStatus('off', 'Sense sync');
+  document.getElementById('settingsApiKey').value = '';
+  document.getElementById('settingsBinId').value  = '';
+  showToast('Sync desconnectat');
+}
+
+function skipSync() {
+  localStorage.setItem(LS_SKIP, '1');
+  showApp();
+}
+
+// ─── SETUP / APP SCREENS ──────────────────────────────────────────────────────
+function showSetup() {
+  document.getElementById('setupScreen').style.display = 'block';
+  document.getElementById('appScreen').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display = 'block';
+  refreshSyncStatus();
+}
+
+function refreshSyncStatus() {
+  if (hasSyncConfig()) {
+    const { binId } = getSyncCreds();
+    setSyncStatus('ok', 'Sync actiu');
+    document.getElementById('syncStatusInfo').innerHTML =
+      `Sync actiu amb bin <code style="background:var(--gray-100);padding:1px 4px;border-radius:3px;">${binId.slice(0,12)}…</code>`;
+    const { key, binId: b } = getSyncCreds();
+    document.getElementById('settingsApiKey').value = key;
+    document.getElementById('settingsBinId').value  = b;
+  } else {
+    setSyncStatus('off', 'Sense sync');
+    document.getElementById('syncStatusInfo').textContent = 'Sync no configurat. Entra les credencials de JSONBin per activar-lo.';
+  }
+}
+
+// ─── SUBJECT COLORS ───────────────────────────────────────────────────────────
+const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
+const subjectColorMap = {};
+let colorIdx = 0;
+function getSubjectColor(s) {
+  const k = (s||'').trim().toLowerCase();
+  if (!(k in subjectColorMap)) subjectColorMap[k] = colorIdx++ % 8;
+  return subjectColorMap[k];
+}
+function colorDot(subj) {
+  return `<span class="dot" style="background:${COLORS[getSubjectColor(subj)]}"></span>`;
+}
+
+// ─── TABS ─────────────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  const btn = document.querySelector(`.nav-btn[data-tab="${tab}"]`);
+  if (btn) btn.classList.add('active');
+  if (tab === 'log')      renderTodayLog();
+  if (tab === 'tasks')    renderTasksTable();
+  if (tab === 'summary')  renderSummary();
+  if (tab === 'settings') refreshSyncStatus();
+}
+
+// ─── TIMER ────────────────────────────────────────────────────────────────────
+let timerInterval = null, timerSeconds = 0, timerRunning = false;
+
+function updateTimerLabel() {
+  const tasks = loadTasks();
+  const task = tasks.find(t => t.id === document.getElementById('timerTask').value);
+  document.getElementById('timerTaskLabel').textContent = task
+    ? `${task.subject}${task.topic?' · '+task.topic:''}${task.type?' · '+task.type:''}`
+    : 'Cap tasca seleccionada';
+}
+
+function tickTimer() {
+  timerSeconds++;
+  const h = Math.floor(timerSeconds/3600), m = Math.floor(timerSeconds%3600/60), s = timerSeconds%60;
+  document.getElementById('timerDisplay').textContent =
+    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function startTimer() {
+  if (!document.getElementById('timerTask').value) return showToast('Selecciona una tasca primer');
+  timerRunning = true;
+  timerInterval = setInterval(tickTimer, 1000);
+  document.getElementById('timerStartBtn').style.display = 'none';
+  document.getElementById('timerPauseBtn').style.display = '';
+  document.getElementById('timerStopBtn').style.display = '';
+}
+
+function pauseTimer() {
+  clearInterval(timerInterval); timerRunning = false;
+  document.getElementById('timerPauseBtn').textContent = '▶ Reprendre';
+  document.getElementById('timerPauseBtn').onclick = resumeTimer;
+}
+
+function resumeTimer() {
+  timerRunning = true;
+  timerInterval = setInterval(tickTimer, 1000);
+  document.getElementById('timerPauseBtn').textContent = '⏸ Pausar';
+  document.getElementById('timerPauseBtn').onclick = pauseTimer;
+}
+
+function stopTimer() {
+  clearInterval(timerInterval); timerRunning = false;
+  const hours = Math.round(timerSeconds/3600*4)/4;
+  if (hours >= 0.25) {
+    logHours(document.getElementById('timerTask').value, todayStr(), hours);
+    showToast(`✓ ${hours}h guardades`);
+    renderTodayLog();
+    schedulePush();
+  } else {
+    showToast('Menys de 15 min — no guardat');
+  }
+  timerSeconds = 0;
+  document.getElementById('timerDisplay').textContent = '00:00:00';
+  document.getElementById('timerStartBtn').style.display = '';
+  document.getElementById('timerPauseBtn').style.display = 'none';
+  document.getElementById('timerStopBtn').style.display = 'none';
+  document.getElementById('timerPauseBtn').textContent = '⏸ Pausar';
+  document.getElementById('timerPauseBtn').onclick = pauseTimer;
+}
+
+// ─── LOG HOURS ────────────────────────────────────────────────────────────────
+function logHours(taskId, date, hours) {
+  if (!taskId || !date || hours <= 0) return;
+  const logs = loadLogs();
+  if (!logs[taskId]) logs[taskId] = {};
+  logs[taskId][date] = Math.round(((logs[taskId][date]||0) + hours)*100)/100;
+  saveLogs(logs);
+}
+
+function logManual() {
+  const taskId = document.getElementById('manualTask').value;
+  const hours  = parseFloat(document.getElementById('manualHours').value);
+  const date   = document.getElementById('manualDate').value;
+  if (!taskId) return showToast('Selecciona una tasca');
+  if (!hours || hours <= 0) return showToast('Entra les hores');
+  if (!date)  return showToast('Selecciona una data');
+  logHours(taskId, date, hours);
+  document.getElementById('manualHours').value = '';
+  renderTodayLog();
+  schedulePush();
+  showToast(`✓ ${hours}h guardades`);
+}
+
+function deleteLogEntry(taskId, date) {
+  const logs = loadLogs();
+  if (logs[taskId]) { delete logs[taskId][date]; saveLogs(logs); }
+  renderTodayLog();
+  schedulePush();
+}
+
+function todayStr() { return new Date().toISOString().slice(0,10); }
+
+function renderTodayLog() {
+  const dateVal = document.getElementById('manualDate').value || todayStr();
+  const tasks = loadTasks(), logs = loadLogs();
+  let html = '', total = 0;
+  for (const t of tasks) {
+    const h = (logs[t.id] && logs[t.id][dateVal]) || 0;
+    if (h > 0) {
+      total += h;
+      html += `<div class="log-item">
+        <div>${colorDot(t.subject)}<span class="log-subject">${esc(t.subject)}</span>
+          <span class="log-detail"> · ${esc(t.topic||'')}${t.type?' · '+t.type:''}</span></div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="log-hours">${h}h</span>
+          <button class="btn-icon" onclick="deleteLogEntry('${t.id}','${dateVal}')">🗑</button>
+        </div></div>`;
+    }
+  }
+  const months = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+  const [y,m,d] = dateVal.split('-');
+  document.getElementById('todayLogTitle').textContent = `Registrat el ${parseInt(d)} ${months[parseInt(m)-1]} ${y}`;
+  document.getElementById('todayLogs').innerHTML = html || '<div class="empty"><div class="empty-icon">📭</div>Res registrat aquest dia</div>';
+  document.getElementById('todayTotal').textContent = total > 0 ? `Total: ${total}h` : '';
+}
+
+// ─── TASKS TABLE ──────────────────────────────────────────────────────────────
+function hoursForTask(id) {
+  const logs = loadLogs();
+  if (!logs[id]) return 0;
+  return Object.values(logs[id]).reduce((a,b)=>a+b,0);
+}
+
+function renderTasksTable() {
+  const tasks = loadTasks();
+  const tbody = document.getElementById('tasksTableBody');
+  if (!tasks.length) { tbody.innerHTML = '<tr><td colspan="9" class="empty">Cap tasca</td></tr>'; return; }
+  tbody.innerHTML = tasks.map(t => {
+    const done = hoursForTask(t.id);
+    const pct = t.estimatedHours > 0 ? Math.min(100, Math.round(done/t.estimatedHours*100)) : null;
+    return `<tr>
+      <td>${colorDot(t.subject)}${esc(t.subject)}</td>
+      <td>${esc(t.topic||'—')}</td>
+      <td>${esc(t.type||'—')}</td>
+      <td>${esc(t.detail||'—')}</td>
+      <td>${t.status==='ok'?'<span class="badge badge-ok">✓ Fet</span>':'<span class="badge badge-pending">Pendent</span>'}</td>
+      <td>${t.estimatedHours||'—'}</td>
+      <td style="color:var(--blue);font-weight:600">${done>0?done.toFixed(1):'0'}</td>
+      <td>${pct!==null?`<div class="progress-wrap">
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--blue)'}"></div></div>
+        <span class="progress-label">${pct}%</span></div>`:'—'}</td>
+      <td>
+        <button class="btn-icon" onclick="openTaskModal('${t.id}')">✏️</button>
+        <button class="btn-icon" onclick="deleteTask('${t.id}')">🗑</button>
+      </td></tr>`;
+  }).join('');
+}
+
+// ─── TASK MODAL ───────────────────────────────────────────────────────────────
+function openTaskModal(editId) {
+  const tasks = loadTasks();
+  document.getElementById('taskModal').classList.add('open');
+  document.getElementById('editTaskId').value = editId || '';
+  document.getElementById('taskModalTitle').textContent = editId ? 'Editar tasca' : 'Nova tasca';
+  const subjects = [...new Set(tasks.map(t=>t.subject.trim()))];
+  document.getElementById('subjectSuggestions').innerHTML = subjects.map(s=>`<option value="${esc(s)}">`).join('');
+  if (editId) {
+    const t = tasks.find(t=>t.id===editId);
+    if (t) {
+      document.getElementById('taskSubject').value   = t.subject;
+      document.getElementById('taskTopic').value     = t.topic||'';
+      document.getElementById('taskType').value      = t.type||'';
+      document.getElementById('taskDetail').value    = t.detail||'';
+      document.getElementById('taskEstimated').value = t.estimatedHours||'';
+      document.getElementById('taskStatus').value    = t.status||'';
+    }
+  } else {
+    ['taskSubject','taskTopic','taskDetail','taskEstimated'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('taskType').value = '';
+    document.getElementById('taskStatus').value = '';
+  }
+}
+
+function closeTaskModal() { document.getElementById('taskModal').classList.remove('open'); }
+
+function saveTask() {
+  const subject = document.getElementById('taskSubject').value.trim();
+  if (!subject) return showToast('Assignatura obligatòria');
+  const tasks = loadTasks();
+  const editId = document.getElementById('editTaskId').value;
+  const data = {
+    subject,
+    topic:          document.getElementById('taskTopic').value.trim(),
+    type:           document.getElementById('taskType').value,
+    detail:         document.getElementById('taskDetail').value.trim(),
+    estimatedHours: parseFloat(document.getElementById('taskEstimated').value)||0,
+    status:         document.getElementById('taskStatus').value,
+  };
+  if (editId) {
+    const i = tasks.findIndex(t=>t.id===editId);
+    if (i!==-1) tasks[i] = {...tasks[i], ...data};
+  } else {
+    tasks.push({ id: genId(), createdAt: todayStr(), ...data });
+  }
+  saveTasks(tasks);
+  closeTaskModal();
+  renderTasksTable();
+  refreshTaskSelects();
+  schedulePush();
+  showToast('✓ Tasca guardada');
+}
+
+function deleteTask(id) {
+  if (!confirm('Segur que vols eliminar? Es perdran les hores registrades.')) return;
+  saveTasks(loadTasks().filter(t=>t.id!==id));
+  const logs = loadLogs(); delete logs[id]; saveLogs(logs);
+  renderTasksTable();
+  refreshTaskSelects();
+  schedulePush();
+  showToast('Tasca eliminada');
+}
+
+// ─── SUMMARY ──────────────────────────────────────────────────────────────────
+function hoursInRange(taskId, from, to) {
+  const logs = loadLogs();
+  if (!logs[taskId]) return 0;
+  return Object.entries(logs[taskId]).reduce((sum,[d,h])=>{
+    return (!from||d>=from) && (!to||d<=to) ? sum+h : sum;
+  }, 0);
+}
+
+function renderSummary() {
+  const from = document.getElementById('filterFrom').value||null;
+  const to   = document.getElementById('filterTo').value||null;
+  const tasks = loadTasks();
+  let totalH=0, totalE=0, doneCount=0;
+  const subjH = {};
+  for (const t of tasks) {
+    const h = hoursInRange(t.id, from, to);
+    totalH += h; totalE += t.estimatedHours||0;
+    if (t.status==='ok') doneCount++;
+    subjH[t.subject.trim()] = (subjH[t.subject.trim()]||0) + h;
+  }
+  const pct = totalE>0 ? Math.round(totalH/totalE*100) : 0;
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-box"><div class="stat-value">${totalH.toFixed(1)}</div><div class="stat-label">Hores registrades</div></div>
+    <div class="stat-box"><div class="stat-value">${pct}%</div><div class="stat-label">% completat</div></div>
+    <div class="stat-box"><div class="stat-value">${doneCount}/${tasks.length}</div><div class="stat-label">Tasques fetes</div></div>
+    <div class="stat-box"><div class="stat-value">${Math.max(0,totalE-totalH).toFixed(1)}</div><div class="stat-label">Hores restants</div></div>`;
+
+  const maxH = Math.max(...Object.values(subjH), 1);
+  document.getElementById('subjectStats').innerHTML = Object.entries(subjH)
+    .sort((a,b)=>b[1]-a[1])
+    .map(([s,h])=>{
+      const c = COLORS[getSubjectColor(s)];
+      return `<div style="margin-bottom:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+          <span><span class="dot" style="background:${c}"></span>${esc(s)}</span>
+          <span style="font-weight:600;color:var(--blue)">${h.toFixed(1)}h</span>
+        </div>
+        <div class="progress-bar" style="height:8px;">
+          <div class="progress-fill" style="width:${Math.round(h/maxH*100)}%;background:${c}"></div>
+        </div></div>`;
+    }).join('') || '<div class="empty">Sense dades</div>';
+
+  document.getElementById('taskProgress').innerHTML = tasks.map(t=>{
+    const done = hoursInRange(t.id, from, to);
+    if (!done && !t.estimatedHours) return '';
+    const pctT = t.estimatedHours>0 ? Math.min(100,Math.round(done/t.estimatedHours*100)) : 0;
+    const c = COLORS[getSubjectColor(t.subject)];
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
+        <div>${colorDot(t.subject)}<strong>${esc(t.subject)}</strong>
+          ${t.topic?`<span style="color:var(--gray-400)"> · ${esc(t.topic)}</span>`:''}
+          ${t.type?`<span style="color:var(--gray-400)"> · ${esc(t.type)}</span>`:''}
+        </div>
+        <span style="font-size:12px;color:var(--gray-600)">${done.toFixed(1)} / ${t.estimatedHours||'?'}h</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width:${pctT}%;background:${pctT>=100?'var(--green)':c}"></div>
+      </div></div>`;
+  }).join('') || '<div class="empty">Sense dades</div>';
+}
+
+function setWeekFilter() {
+  const now=new Date(), day=now.getDay()||7, mon=new Date(now);
+  mon.setDate(now.getDate()-day+1);
+  document.getElementById('filterFrom').value = mon.toISOString().slice(0,10);
+  document.getElementById('filterTo').value   = now.toISOString().slice(0,10);
+  renderSummary();
+}
+function setMonthFilter() {
+  const now=new Date();
+  document.getElementById('filterFrom').value = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  document.getElementById('filterTo').value   = now.toISOString().slice(0,10);
+  renderSummary();
+}
+function clearFilter() {
+  document.getElementById('filterFrom').value='';
+  document.getElementById('filterTo').value='';
+  renderSummary();
+}
+
+// ─── EXPORT ───────────────────────────────────────────────────────────────────
+function exportExcel() {
+  const tasks = loadTasks(), logs = loadLogs();
+  const from = document.getElementById('exportFrom').value||null;
+  const to   = document.getElementById('exportTo').value||null;
+  const dateSet = new Set();
+  for (const tl of Object.values(logs))
+    for (const d of Object.keys(tl))
+      if ((!from||d>=from)&&(!to||d<=to)) dateSet.add(d);
+  const dates = [...dateSet].sort();
+  if (!tasks.length) return showToast('No hi ha tasques');
+
+  const header = ['Matèria','Tema','A/P','Detall','Estat','Previsió','Total',
+    ...dates.map(d=>{ const [,m,day]=d.split('-'); return `${parseInt(day)}/${parseInt(m)}`; })];
+  const rows = tasks.map(t=>{
+    const dh = dates.map(d=>(logs[t.id]&&logs[t.id][d])||0);
+    return [t.subject, t.topic||'', t.type||'', t.detail||'',
+            t.status==='ok'?'ok':'', t.estimatedHours||0,
+            dh.reduce((a,b)=>a+b,0), ...dh];
+  });
+
+  const ws = XLSX.utils.aoa_to_sheet([header,...rows]);
+  ws['!cols'] = [{wch:14},{wch:12},{wch:12},{wch:12},{wch:7},{wch:7},{wch:6},...dates.map(()=>({wch:5}))];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Tracker');
+  XLSX.writeFile(wb, `tracker_${(from||'inici').replace(/-/g,'')}_${(to||'avui').replace(/-/g,'')}.xlsx`);
+  showToast('✓ Excel descarregat');
+}
+
+function exportJSON() {
+  const blob = new Blob([JSON.stringify({version:1,exportedAt:new Date().toISOString(),tasks:loadTasks(),logs:loadLogs()},null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `uni_tracker_${todayStr()}.json`; a.click();
+  showToast('✓ Backup exportat');
+}
+
+function importJSON(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.tasks||!data.logs) throw '';
+      if (!confirm(`Importar ${data.tasks.length} tasques? Sobreescriurà les dades actuals.`)) return;
+      saveTasks(data.tasks); saveLogs(data.logs);
+      refreshTaskSelects(); renderTodayLog();
+      schedulePush();
+      showToast(`✓ ${data.tasks.length} tasques importades`);
+    } catch { showToast('Error: fitxer invàlid'); }
+  };
+  reader.readAsText(file); e.target.value='';
+}
+
+function clearAllData() {
+  if (!confirm('Segur? S\'esborraran TOTES les dades.')) return;
+  if (!confirm('Última confirmació.')) return;
+  [LS_TASKS,LS_LOGS].forEach(k=>localStorage.removeItem(k));
+  if (hasSyncConfig()) pushToCloud();
+  refreshTaskSelects(); renderTodayLog();
+  showToast('Dades esborrades');
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function genId() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function showToast(msg) {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+function refreshTaskSelects() {
+  const tasks = loadTasks();
+  const opts = '<option value="">— Selecciona —</option>' +
+    tasks.map(t=>`<option value="${t.id}">${esc(t.subject)}${t.topic?' · '+t.topic:''}${t.type?' · '+t.type:''}</option>`).join('');
+  document.getElementById('timerTask').innerHTML = opts;
+  document.getElementById('manualTask').innerHTML = opts;
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+async function init() {
+  const now = new Date();
+  const days = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
+  const months = ['gen','feb','mar','abr','mai','jun','jul','ago','set','oct','nov','des'];
+  document.getElementById('headerDate').textContent =
+    `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+
+  document.getElementById('manualDate').value = todayStr();
+  document.getElementById('exportFrom').value = new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10);
+  document.getElementById('exportTo').value   = todayStr();
+
+  loadTasks().forEach(t=>getSubjectColor(t.subject));
+
+  const skip = localStorage.getItem(LS_SKIP);
+  const configured = hasSyncConfig();
+
+  if (configured) {
+    showApp();
+    refreshTaskSelects();
+    await pullFromCloud(); // pull latest data on every load
+    refreshTaskSelects();
+    renderTodayLog();
+  } else if (skip) {
+    showApp();
+    refreshTaskSelects();
+    renderTodayLog();
+  } else {
+    showSetup();
+  }
+
+  // Also populate setup fields if returning there
+  if (configured) {
+    const {key, binId} = getSyncCreds();
+    document.getElementById('settingsApiKey').value = key;
+    document.getElementById('settingsBinId').value  = binId;
+  }
+}
+
+document.getElementById('taskModal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeTaskModal(); });
+document.getElementById('manualDate').addEventListener('change', renderTodayLog);
+document.getElementById('filterFrom').addEventListener('change', renderSummary);
+document.getElementById('filterTo').addEventListener('change', renderSummary);
+
+init();
+</script>
+</body>
+</html>

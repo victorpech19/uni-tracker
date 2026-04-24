@@ -419,12 +419,19 @@
     <div class="tab-content" id="tab-plan">
       <div class="plan-header">
         <div class="plan-month-nav">
-          <button class="btn btn-ghost btn-sm" onclick="prevMonth()">‹</button>
-          <div class="plan-month-label" id="planMonthLabel">—</div>
-          <button class="btn btn-ghost btn-sm" onclick="nextMonth()">›</button>
+          <button class="btn btn-ghost btn-sm" onclick="shiftPlan(-1)">‹</button>
+          <div class="plan-month-label" id="planMonthLabel" style="min-width: 150px;">—</div>
+          <button class="btn btn-ghost btn-sm" onclick="shiftPlan(1)">›</button>
         </div>
         <button class="btn btn-ghost btn-sm" onclick="goToday()">Avui</button>
-        <span style="font-size:12px; color:var(--gray-400);">Clica una cel·la per editar hores · Clica 📅 per marcar examen · Clica les hores lliures per editar-les</span>
+
+        <div style="display:flex; gap:4px; margin-left:10px; border-left:1px solid var(--gray-200); padding-left:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="setPlanView('week')">Setmana</button>
+          <button class="btn btn-ghost btn-sm" onclick="setPlanView('month')">Mes</button>
+          <button class="btn btn-ghost btn-sm" onclick="setPlanView('quarter')">3 Mesos</button>
+        </div>
+
+       <span style="font-size:12px; color:var(--gray-400); margin-left: auto;">Clica una cel·la per editar hores · 📅 per examen</span>
       </div>
       <div class="plan-stats-row" id="planStatsRow"></div>
       <div class="plan-wrap" id="planWrap">
@@ -1086,16 +1093,29 @@ function importTasksMerge(e) {
 }
 
 // ─── PLANNING MATRIX ──────────────────────────────────────────────────────────
-let planYear  = new Date().getFullYear();
-let planMonth = new Date().getMonth();
+// ─── PLANNING MATRIX (MULTIVISTA) ──────────────────────────────────────────────
+let planViewMode = 'month'; // 'week', 'month', 'quarter'
+let planBaseDate = new Date();
 
-function prevMonth() { planMonth--; if(planMonth<0){planMonth=11;planYear--;} renderPlanMatrix(); }
-function nextMonth() { planMonth++; if(planMonth>11){planMonth=0;planYear++;} renderPlanMatrix(); }
-function goToday()   { planYear=new Date().getFullYear(); planMonth=new Date().getMonth(); renderPlanMatrix(); }
+function setPlanView(mode) { planViewMode = mode; renderPlanMatrix(); }
+function goToday() { planBaseDate = new Date(); renderPlanMatrix(); }
 
-function daysInMonth(y,m) { return new Date(y,m+1,0).getDate(); }
-function dateStr(y,m,d)   { return `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
-function dayOfWeek(y,m,d) { return new Date(y,m,d).getDay(); } // 0=Sun
+function shiftPlan(dir) {
+  if (planViewMode === 'week') {
+    planBaseDate.setDate(planBaseDate.getDate() + (dir * 7));
+  } else if (planViewMode === 'month') {
+    planBaseDate.setMonth(planBaseDate.getMonth() + dir);
+  } else if (planViewMode === 'quarter') {
+    planBaseDate.setMonth(planBaseDate.getMonth() + (dir * 3));
+  }
+  renderPlanMatrix();
+}
+
+function getMonday(d) {
+  const dt = new Date(d);
+  const day = dt.getDay(), diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+  return new Date(dt.setDate(diff));
+}
 
 const MONTH_NAMES = ['Gener','Febrer','Març','Abril','Maig','Juny','Juliol','Agost','Setembre','Octubre','Novembre','Desembre'];
 const DAY_NAMES   = ['Dg','Dl','Dt','Dc','Dj','Dv','Ds'];
@@ -1104,40 +1124,67 @@ function renderPlanMatrix() {
   const tasks  = loadTasks();
   const logs   = loadLogs();
   const cal    = loadCalendar();
-  const nDays  = daysInMonth(planYear, planMonth);
   const today  = todayStr();
-
-  document.getElementById('planMonthLabel').textContent = `${MONTH_NAMES[planMonth]} ${planYear}`;
-
-  // Build day list
   const days = [];
-  for (let d=1; d<=nDays; d++) {
-    const ds = dateStr(planYear, planMonth, d);
-    const dow = dayOfWeek(planYear, planMonth, d);
-    days.push({ d, ds, dow, isWeekend: dow===0||dow===6, isToday: ds===today });
+
+  let label = "";
+
+  // 1. Generar la lista de días según la vista elegida
+  if (planViewMode === 'week') {
+    const startDate = getMonday(planBaseDate);
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      days.push(d);
+    }
+    label = `${days[0].getDate()} ${MONTH_NAMES[days[0].getMonth()].slice(0,3)} - ${days[6].getDate()} ${MONTH_NAMES[days[6].getMonth()].slice(0,3)} ${days[6].getFullYear()}`;
+  
+  } else if (planViewMode === 'month') {
+    const y = planBaseDate.getFullYear(), m = planBaseDate.getMonth();
+    const nDays = new Date(y, m + 1, 0).getDate();
+    for (let i = 1; i <= nDays; i++) days.push(new Date(y, m, i));
+    label = `${MONTH_NAMES[m]} ${y}`;
+  
+  } else if (planViewMode === 'quarter') {
+    const y = planBaseDate.getFullYear(), m = planBaseDate.getMonth();
+    for (let mOffset = 0; mOffset < 3; mOffset++) {
+      const curM = (m + mOffset) % 12;
+      const curY = y + Math.floor((m + mOffset) / 12);
+      const nDays = new Date(curY, curM + 1, 0).getDate();
+      for (let i = 1; i <= nDays; i++) days.push(new Date(curY, curM, i));
+    }
+    const lastDay = days[days.length-1];
+    label = `${MONTH_NAMES[m].slice(0,3)} ${y} - ${MONTH_NAMES[lastDay.getMonth()].slice(0,3)} ${lastDay.getFullYear()}`;
   }
 
-  // Calendar keys for this month
-  const calKey = `${planYear}-${String(planMonth+1).padStart(2,'0')}`;
+  document.getElementById('planMonthLabel').textContent = label;
 
-  // Stats
+  // 2. Formatear la información de cada día
+  const dayData = days.map(dt => {
+    const y = dt.getFullYear();
+    const m = dt.getMonth();
+    const d = dt.getDate();
+    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow = dt.getDay();
+    return { d, ds, dow, m, isWeekend: dow===0||dow===6, isToday: ds===today };
+  });
+
+  // 3. Calcular Estadísticas (solo del periodo visible)
   let totalAvail=0, totalDone=0, totalEstimated=0;
-  days.forEach(({ds})=>{ totalAvail += parseFloat(cal[ds]?.avail||0); });
+  dayData.forEach(({ds})=>{ totalAvail += parseFloat(cal[ds]?.avail||0); });
   tasks.forEach(t=>{
     totalEstimated += t.estimatedHours||0;
-    days.forEach(({ds})=>{ totalDone += (logs[t.id]&&logs[t.id][ds])||0; });
+    dayData.forEach(({ds})=>{ totalDone += (logs[t.id]&&logs[t.id][ds])||0; });
   });
-  const examDays = days.filter(({ds})=>cal[ds]?.exam).length;
+  const examDays = dayData.filter(({ds})=>cal[ds]?.exam).length;
 
-  // Stats row
   document.getElementById('planStatsRow').innerHTML = `
-    <div class="plan-stat"><strong>${totalAvail.toFixed(0)}h</strong>Hores lliures al mes</div>
-    <div class="plan-stat"><strong>${totalDone.toFixed(1)}h</strong>Hores estudiat</div>
-    <div class="plan-stat"><strong>${Math.max(0,totalEstimated-hoursForAllTasksAll()).toFixed(1)}h</strong>Hores restants</div>
+    <div class="plan-stat"><strong>${totalAvail.toFixed(0)}h</strong>Lliures (visible)</div>
+    <div class="plan-stat"><strong>${totalDone.toFixed(1)}h</strong>Estudiat (visible)</div>
+    <div class="plan-stat"><strong>${Math.max(0,totalEstimated-hoursForAllTasksAll()).toFixed(1)}h</strong>Restants totals</div>
     <div class="plan-stat"><strong>${examDays}</strong>Dies d'examen</div>
     <div class="plan-stat"><strong>${tasks.filter(t=>t.status!=='ok').length}</strong>Tasques pendents</div>`;
 
-  // Group tasks by subject
   const subjMap = {};
   tasks.forEach(t=>{
     const s=t.subject.trim();
@@ -1145,50 +1192,58 @@ function renderPlanMatrix() {
     subjMap[s].push(t);
   });
 
-  // Header row
+  // 4. Dibujar cabeceras
   const sticky4 = `style="position:sticky;left:0;z-index:11;background:var(--gray-800);"`;
   let thead = `<thead><tr>
     <th class="col-sticky" ${sticky4}>Assignatura</th>
     <th class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:11;background:var(--gray-800);">Tema</th>
     <th class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:11;background:var(--gray-800);">Tipus</th>
     <th class="col-sticky col-total" style="position:sticky;left:166px;z-index:11;background:var(--gray-800);">Total</th>`;
-  days.forEach(({d,dow,ds,isToday})=>{
+  
+  let lastMonth = -1;
+  dayData.forEach(({d,dow,ds,isToday,m}) => {
     const isExam=!!cal[ds]?.exam;
     let cls='plan-day-hdr';
     if (isToday) cls+=' today-col';
     else if (isExam) cls+=' exam-col';
     else if (dow===0||dow===6) cls+=' weekend-col';
-    thead+=`<th class="${cls}"><div>${d}</div><div style="font-size:9px;opacity:0.7">${DAY_NAMES[dow]}</div></th>`;
+    
+    // Etiquetar el mes si cambiamos de mes en la vista de 3 meses
+    let mLabel = '';
+    if (m !== lastMonth && planViewMode === 'quarter') {
+        mLabel = `<div style="font-size:8px; color:var(--blue-light); margin-bottom:2px;">${MONTH_NAMES[m].slice(0,3)}</div>`;
+        lastMonth = m;
+    }
+    thead+=`<th class="${cls}">${mLabel}<div>${d}</div><div style="font-size:9px;opacity:0.7">${DAY_NAMES[dow]}</div></th>`;
   });
   thead+='</tr></thead>';
 
-  // Available hours row
+  // 5. Dibujar filas genéricas (Disponibilidad y Exámenes)
   let availRow = `<tr class="row-avail">
     <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f0fdf4;font-size:10px;color:var(--green);font-weight:600;">Hores lliures</td>
     <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#f0fdf4;"></td>
     <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#f0fdf4;"></td>
     <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#f0fdf4;font-size:10px;font-weight:700;color:var(--green);text-align:center;">${totalAvail.toFixed(0)}</td>`;
-  days.forEach(({ds})=>{
+  dayData.forEach(({ds})=>{
     const val=cal[ds]?.avail||'';
     availRow+=`<td class="avail-cell" onclick="editAvailCell('${ds}',this)">${val||'—'}</td>`;
   });
   availRow+='</tr>';
 
-  // Exam row
   let examRow = `<tr class="row-exam">
     <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#fff1f2;font-size:10px;color:var(--red);font-weight:600;">Exàmens</td>
     <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#fff1f2;"></td>
     <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#fff1f2;"></td>
     <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#fff1f2;"></td>`;
-  days.forEach(({ds})=>{
+  dayData.forEach(({ds})=>{
     const isExam=!!cal[ds]?.exam;
     examRow+=`<td class="exam-cell" onclick="toggleExam('${ds}')" title="${isExam?'Treure examen':'Marcar examen'}">${isExam?'📅':''}</td>`;
   });
   examRow+='</tr>';
 
-  // Monthly total row per day
+  // Totales por día
   let monthTotals = [];
-  days.forEach(({ds})=>{
+  dayData.forEach(({ds})=>{
     let t=0;
     tasks.forEach(task=>{ t+=(logs[task.id]&&logs[task.id][ds])||0; });
     monthTotals.push(t);
@@ -1199,7 +1254,7 @@ function renderPlanMatrix() {
     <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#f8fafc;"></td>
     <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#f8fafc;font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${totalDone.toFixed(1)}</td>`;
   monthTotals.forEach((t,i)=>{
-    const ds=days[i].ds;
+    const ds=dayData[i].ds;
     const isToday=ds===today, isExam=!!cal[ds]?.exam;
     let style='text-align:center;font-size:11px;font-weight:700;';
     if (t>0) style+='color:var(--blue);';
@@ -1209,11 +1264,12 @@ function renderPlanMatrix() {
   });
   totalRow+='</tr>';
 
-  // Task rows
+  // 6. Dibujar tareas
   let taskRows='';
   Object.entries(subjMap).forEach(([subj,subjTasks])=>{
-    const color=COLORS[getSubjectColor(subj)];
-    // subject header
+    // NOTA: Asumo que hiciste el cambio del color picker, por lo que usamos la versión sin array COLORS
+    const color = getSubjectColor(subj); 
+    
     taskRows+=`<tr class="row-subject-hdr">
       <td class="col-sticky" colspan="1" style="position:sticky;left:0;z-index:8;background:#eff6ff;color:${color};font-weight:700;font-size:11px;border-left:3px solid ${color};">
         ${esc(subj)}
@@ -1221,8 +1277,9 @@ function renderPlanMatrix() {
       <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#eff6ff;"></td>
       <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#eff6ff;"></td>
       <td class="col-sticky col-total"   style="position:sticky;left:166px;z-index:8;background:#eff6ff;"></td>
-      ${days.map(()=>'<td style="background:#eff6ff;"></td>').join('')}
+      ${dayData.map(()=>'<td style="background:#eff6ff;"></td>').join('')}
     </tr>`;
+    
     subjTasks.forEach(t=>{
       const taskTotal=hoursForTask(t.id);
       const pct=t.estimatedHours>0?Math.min(100,Math.round(taskTotal/t.estimatedHours*100)):null;
@@ -1234,7 +1291,7 @@ function renderPlanMatrix() {
           <div style="font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${taskTotal>0?taskTotal.toFixed(1):''}</div>
           ${pct!==null?`<div class="plan-progress"><div class="plan-progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':color};"></div></div>`:''}
         </td>`;
-      days.forEach(({ds,isToday})=>{
+      dayData.forEach(({ds,isToday})=>{
         const h=(logs[t.id]&&logs[t.id][ds])||0;
         const isExam=!!cal[ds]?.exam;
         const isPast=ds<today;
@@ -1251,12 +1308,11 @@ function renderPlanMatrix() {
   });
 
   if (!tasks.length) {
-    taskRows=`<tr><td colspan="${4+nDays}" class="empty" style="padding:32px;">Cap tasca. Ves a Tasques per afegir-ne.</td></tr>`;
+    taskRows=`<tr><td colspan="${4+dayData.length}" class="empty" style="padding:32px;">Cap tasca. Ves a Tasques per afegir-ne.</td></tr>`;
   }
 
   document.getElementById('planTable').innerHTML = thead + `<tbody>${availRow}${examRow}${totalRow}${taskRows}</tbody>`;
 }
-
 function hoursForAllTasksAll() {
   const logs=loadLogs();
   let total=0;

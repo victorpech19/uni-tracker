@@ -322,6 +322,10 @@
           <label>Secret Key (Master Key)</label>
           <input type="password" id="setupApiKey" placeholder="$2a$10$...">
         </div>
+        <div class="form-group">
+          <label>Bin ID <span style="font-size:11px;color:var(--gray-400)">(Deixa-ho en blanc si és el teu primer dispositiu)</span></label>
+          <input type="text" id="setupBinId" placeholder="Si ja el tens a l'ordinador, enganxa'l aquí">
+        </div>
         <div style="display:flex; gap:10px; margin-top:4px; flex-wrap:wrap;">
           <button class="btn btn-primary" id="setupConnectBtn" onclick="saveSync()">Connectar</button>
           <span id="setupSpinner" style="display:none; font-size:13px; color:var(--gray-600); align-self:center;">⏳ Creant base de dades…</span>
@@ -559,8 +563,8 @@
             <input type="password" id="settingsApiKey" placeholder="$2a$10$...">
           </div>
           <div class="form-group">
-            <label>Bin ID <span style="font-size:11px;color:var(--gray-400)">(creat automàticament)</span></label>
-            <input type="text" id="settingsBinId" placeholder="6448a1..." readonly style="background:var(--gray-50);color:var(--gray-400);">
+            <label>Bin ID</label>
+            <input type="text" id="settingsBinId" placeholder="Ex: 6448a1...">
           </div>
           <div style="display:flex; gap:10px; flex-wrap:wrap;">
             <button class="btn btn-primary" onclick="saveSync()">Reconnectar amb nova clau</button>
@@ -731,15 +735,31 @@ function setSyncStatus(state, label) {
 }
 
 async function saveSync() {
-  const keyInput = document.getElementById('setupApiKey') || document.getElementById('settingsApiKey');
+  // Detectamos en qué pantalla estamos para coger los inputs correctos
+  const isSetup = document.getElementById('setupScreen').style.display !== 'none';
+  
+  const keyInput = isSetup ? document.getElementById('setupApiKey') : document.getElementById('settingsApiKey');
+  const binInput = isSetup ? document.getElementById('setupBinId') : document.getElementById('settingsBinId');
+
   const key = keyInput.value.trim();
+  let binId = binInput ? binInput.value.trim() : '';
+
   if (!key) return showToast('Cal enganxar la Secret Key');
-  const btn=document.getElementById('setupConnectBtn'), spinner=document.getElementById('setupSpinner');
-  if (btn) btn.style.display='none';
-  if (spinner) spinner.style.display='inline';
+
+  const btn = document.getElementById('setupConnectBtn');
+  const spinner = document.getElementById('setupSpinner');
+  
+  if (btn && isSetup) btn.style.display = 'none';
+  if (spinner && isSetup) spinner.style.display = 'inline';
   setSyncStatus('syncing', 'Connectant…');
+
   try {
-    let binId = localStorage.getItem(LS_BIN_ID);
+    // Si no se ha introducido un Bin ID manualmente, miramos si ya hay uno guardado
+    if (!binId) {
+      binId = localStorage.getItem(LS_BIN_ID);
+    }
+
+    // Si sigue sin haber Bin ID, entonces SÍ creamos uno nuevo en JSONBin
     if (!binId) {
       const createRes = await fetch('https://api.jsonbin.io/v3/b', {
         method: 'POST',
@@ -750,20 +770,30 @@ async function saveSync() {
       const createData = await createRes.json();
       binId = createData.metadata.id;
     }
+
+    // Guardamos la configuración en LocalStorage
     localStorage.setItem(LS_API_KEY, key);
     localStorage.setItem(LS_BIN_ID, binId);
     localStorage.removeItem(LS_SKIP);
+    
+    // Actualizamos los campos visuales de ajustes
     document.getElementById('settingsApiKey').value = key;
     document.getElementById('settingsBinId').value  = binId;
+    
+    // Descargamos los datos del Bin para confirmar que funciona
     await pullFromCloud();
+    
     showToast('✓ Sync configurat!');
     showApp();
-    switchTab('log');
+    if (isSetup) switchTab('log');
+    
   } catch(e) {
     setSyncStatus('error', 'Error');
-    showToast('Error: ' + (e.message || 'Revisa la Secret Key'));
-    if (btn) btn.style.display='';
-    if (spinner) spinner.style.display='none';
+    showToast('Error: ' + (e.message || 'Revisa la Secret Key o el Bin ID'));
+  } finally {
+    // Restauramos el botón y el spinner
+    if (btn && isSetup) btn.style.display = '';
+    if (spinner && isSetup) spinner.style.display = 'none';
   }
 }
 
@@ -1465,4 +1495,3 @@ init();
 </script>
 </body>
 </html>
-

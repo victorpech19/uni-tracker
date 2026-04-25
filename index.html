@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Uni Tracker — Víctor</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%232563eb' rx='16'/%3E%3Ctext x='50' y='75' font-family='Arial,sans-serif' font-size='74' font-weight='700' text-anchor='middle' fill='white'%3EU%3C/text%3E%3C/svg%3E">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -211,14 +212,24 @@
     .plan-table .col-sticky {
       position: sticky; left: 0; z-index: 10;
       background: white;
-      min-width: 60px; max-width: 60px; width: 60px;
+      min-width: 130px; max-width: 130px; width: 130px;
       padding: 4px 6px; font-size: 11px;
       overflow: hidden; text-overflow: ellipsis;
       border-right: 2px solid var(--gray-200);
     }
-    .plan-table .col-sticky2 { left: 60px; min-width: 56px; max-width: 56px; width: 56px; }
-    .plan-table .col-sticky3 { left: 116px; min-width: 50px; max-width: 50px; width: 50px; }
-    .plan-table .col-total  { left: 166px; min-width: 40px; max-width: 40px; width: 40px; font-weight: 700; color: var(--blue); border-right: 2px solid var(--gray-200); }
+    .plan-table .col-sticky2 { left: 130px; min-width: 100px; max-width: 100px; width: 100px; }
+    .plan-table .col-sticky3 { left: 230px; min-width: 80px; max-width: 80px; width: 80px; }
+    .plan-table .col-total  { left: 310px; min-width: 45px; max-width: 45px; width: 45px; font-weight: 700; color: var(--blue); border-right: 2px solid var(--gray-200); }
+    /* subject color picker swatch */
+    .subject-color-btn { width: 11px; height: 11px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.2); cursor: pointer; display: inline-block; margin-right: 5px; vertical-align: middle; flex-shrink: 0; }
+    .subject-color-btn:hover { transform: scale(1.3); }
+    /* inline add-task row */
+    .row-add-task td { background: #f9fafb; }
+    .row-add-task .col-sticky { background: #f9fafb; }
+    .add-task-btn { cursor: pointer; color: var(--gray-400); font-size: 11px; padding: 1px 5px; border-radius: 4px; border: 1px dashed var(--gray-200); background: none; white-space: nowrap; }
+    .add-task-btn:hover { color: var(--blue); border-color: var(--blue); background: var(--blue-light); }
+    .plan-inline-input { width: 100%; border: 1px solid var(--blue); border-radius: 3px; font-size: 11px; padding: 2px 4px; outline: none; box-sizing: border-box; }
+    .plan-inline-select { width: 100%; border: 1px solid var(--blue); border-radius: 3px; font-size: 11px; padding: 1px 2px; outline: none; background: white; box-sizing: border-box; }
 
     .plan-table thead th {
       background: var(--gray-800); color: white; font-weight: 600;
@@ -306,7 +317,7 @@
 <!-- SETUP SCREEN -->
 <div id="setupScreen" style="display:none; background:var(--gray-50); min-height:100vh; padding-top:20px;">
   <div class="setup-screen">
-    <div class="setup-logo">📚</div>
+    <div class="setup-logo"><svg width="64" height="64" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="border-radius:14px"><rect width="100" height="100" fill="#2563eb" rx="16"/><text x="50" y="75" font-family="Arial,sans-serif" font-size="74" font-weight="700" text-anchor="middle" fill="white">U</text></svg></div>
     <div class="setup-title">Uni Tracker</div>
     <div class="setup-sub">Configura el sync automàtic per accedir des de qualsevol dispositiu. Només cal fer-ho una vegada per dispositiu.</div>
     <div class="card">
@@ -342,7 +353,7 @@
 <div id="appScreen" style="display:none;">
 
   <div class="header">
-    <div class="header-title">📚 Uni Tracker</div>
+    <div class="header-title" style="display:flex;align-items:center;gap:8px;"><svg width="24" height="24" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="border-radius:5px;flex-shrink:0"><rect width="100" height="100" fill="white" rx="14"/><text x="50" y="75" font-family="Arial,sans-serif" font-size="74" font-weight="700" text-anchor="middle" fill="#2563eb">U</text></svg>Uni Tracker</div>
     <div class="header-right">
       <button class="sync-pill off" id="syncPill" onclick="switchTab('settings')">
         <span class="sync-dot off" id="syncDot"></span>
@@ -671,7 +682,8 @@ const LS_LOGS    = 'ut_logs';
 const LS_CAL     = 'ut_calendar';
 const LS_API_KEY = 'ut_apikey';
 const LS_BIN_ID  = 'ut_binid';
-const LS_SKIP    = 'ut_skip';
+const LS_SKIP        = 'ut_skip';
+const LS_SUBJ_COLORS = 'ut_subject_colors';
 
 // ─── LOCAL STORAGE ────────────────────────────────────────────────────────────
 function loadTasks()    { try { return JSON.parse(localStorage.getItem(LS_TASKS)) || []; } catch { return []; } }
@@ -691,7 +703,7 @@ async function pushToCloud() {
   const {key, binId} = getSyncCreds();
   setSyncStatus('syncing', 'Guardant…');
   try {
-    const data = { tasks: loadTasks(), logs: loadLogs(), calendar: loadCalendar(), updatedAt: new Date().toISOString() };
+    const data = { tasks: loadTasks(), logs: loadLogs(), calendar: loadCalendar(), subjectColors: loadSubjectColors(), updatedAt: new Date().toISOString() };
     const res = await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', 'X-Master-Key': key },
@@ -716,9 +728,10 @@ async function pullFromCloud() {
     if (!res.ok) throw new Error(await res.text());
     const json = await res.json();
     const data = json.record;
-    if (data.tasks)    saveTasks(data.tasks);
-    if (data.logs)     saveLogs(data.logs);
-    if (data.calendar) saveCalendar(data.calendar);
+    if (data.tasks)         saveTasks(data.tasks);
+    if (data.logs)          saveLogs(data.logs);
+    if (data.calendar)      saveCalendar(data.calendar);
+    if (data.subjectColors) saveSubjectColors(data.subjectColors);
     setSyncStatus('ok', 'Sincronitzat');
     refreshTaskSelects();
     renderTodayLog();
@@ -849,14 +862,36 @@ function refreshSyncStatus() {
 
 // ─── SUBJECT COLORS ───────────────────────────────────────────────────────────
 const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#ec4899','#06b6d4','#84cc16'];
-const subjectColorMap = {};
+const autoColorMap = {};
 let colorIdx = 0;
+function loadSubjectColors() { try { return JSON.parse(localStorage.getItem(LS_SUBJ_COLORS))||{}; } catch { return {}; } }
+function saveSubjectColors(c) { localStorage.setItem(LS_SUBJ_COLORS, JSON.stringify(c)); }
 function getSubjectColor(s) {
-  const k=(s||'').trim().toLowerCase();
-  if (!(k in subjectColorMap)) subjectColorMap[k]=colorIdx++%8;
-  return subjectColorMap[k];
+  const k = (s||'').trim().toLowerCase();
+  const custom = loadSubjectColors();
+  if (custom[k]) return custom[k];
+  if (!(k in autoColorMap)) autoColorMap[k] = colorIdx++ % 8;
+  return COLORS[autoColorMap[k]];
 }
-function colorDot(subj) { return `<span class="dot" style="background:${COLORS[getSubjectColor(subj)]}"></span>`; }
+function setSubjectColor(subj, color) {
+  const k = (subj||'').trim().toLowerCase();
+  const custom = loadSubjectColors();
+  custom[k] = color;
+  saveSubjectColors(custom);
+  renderPlanMatrix();
+  if (document.getElementById('tab-tasks').classList.contains('active')) renderTasksTable();
+  schedulePush();
+}
+function openColorPicker(subj) {
+  const inp = document.createElement('input');
+  inp.type = 'color'; inp.value = getSubjectColor(subj);
+  inp.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;';
+  document.body.appendChild(inp);
+  inp.addEventListener('change', () => setSubjectColor(subj, inp.value));
+  inp.addEventListener('blur', () => setTimeout(()=>{ if(document.body.contains(inp)) document.body.removeChild(inp); }, 300));
+  inp.click();
+}
+function colorDot(subj) { return `<span class="dot" style="background:${getSubjectColor(subj)}"></span>`; }
 
 // ─── TABS ─────────────────────────────────────────────────────────────────────
 function switchTab(tab) {
@@ -1126,50 +1161,41 @@ function renderPlanMatrix() {
   const cal    = loadCalendar();
   const today  = todayStr();
   const days = [];
-
   let label = "";
 
-  // 1. Generar la lista de días según la vista elegida
+  // 1. Generar días según vista
   if (planViewMode === 'week') {
     const startDate = getMonday(planBaseDate);
     for (let i = 0; i < 7; i++) {
-      const d = new Date(startDate);
-      d.setDate(startDate.getDate() + i);
-      days.push(d);
+      const d = new Date(startDate); d.setDate(startDate.getDate() + i); days.push(d);
     }
     label = `${days[0].getDate()} ${MONTH_NAMES[days[0].getMonth()].slice(0,3)} - ${days[6].getDate()} ${MONTH_NAMES[days[6].getMonth()].slice(0,3)} ${days[6].getFullYear()}`;
-  
   } else if (planViewMode === 'month') {
     const y = planBaseDate.getFullYear(), m = planBaseDate.getMonth();
     const nDays = new Date(y, m + 1, 0).getDate();
     for (let i = 1; i <= nDays; i++) days.push(new Date(y, m, i));
     label = `${MONTH_NAMES[m]} ${y}`;
-  
   } else if (planViewMode === 'quarter') {
     const y = planBaseDate.getFullYear(), m = planBaseDate.getMonth();
     for (let mOffset = 0; mOffset < 3; mOffset++) {
-      const curM = (m + mOffset) % 12;
-      const curY = y + Math.floor((m + mOffset) / 12);
+      const curM = (m + mOffset) % 12, curY = y + Math.floor((m + mOffset) / 12);
       const nDays = new Date(curY, curM + 1, 0).getDate();
       for (let i = 1; i <= nDays; i++) days.push(new Date(curY, curM, i));
     }
     const lastDay = days[days.length-1];
-    label = `${MONTH_NAMES[m].slice(0,3)} ${y} - ${MONTH_NAMES[lastDay.getMonth()].slice(0,3)} ${lastDay.getFullYear()}`;
+    label = `${MONTH_NAMES[planBaseDate.getMonth()].slice(0,3)} ${planBaseDate.getFullYear()} - ${MONTH_NAMES[lastDay.getMonth()].slice(0,3)} ${lastDay.getFullYear()}`;
   }
-
   document.getElementById('planMonthLabel').textContent = label;
 
-  // 2. Formatear la información de cada día
+  // 2. Formatear días
   const dayData = days.map(dt => {
-    const y = dt.getFullYear();
-    const m = dt.getMonth();
-    const d = dt.getDate();
-    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const dow = dt.getDay();
+    const y=dt.getFullYear(), m=dt.getMonth(), d=dt.getDate();
+    const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const dow=dt.getDay();
     return { d, ds, dow, m, isWeekend: dow===0||dow===6, isToday: ds===today };
   });
 
-  // 3. Calcular Estadísticas (solo del periodo visible)
+  // 3. Stats
   let totalAvail=0, totalDone=0, totalEstimated=0;
   dayData.forEach(({ds})=>{ totalAvail += parseFloat(cal[ds]?.avail||0); });
   tasks.forEach(t=>{
@@ -1177,7 +1203,6 @@ function renderPlanMatrix() {
     dayData.forEach(({ds})=>{ totalDone += (logs[t.id]&&logs[t.id][ds])||0; });
   });
   const examDays = dayData.filter(({ds})=>cal[ds]?.exam).length;
-
   document.getElementById('planStatsRow').innerHTML = `
     <div class="plan-stat"><strong>${totalAvail.toFixed(0)}h</strong>Lliures (visible)</div>
     <div class="plan-stat"><strong>${totalDone.toFixed(1)}h</strong>Estudiat (visible)</div>
@@ -1186,76 +1211,56 @@ function renderPlanMatrix() {
     <div class="plan-stat"><strong>${tasks.filter(t=>t.status!=='ok').length}</strong>Tasques pendents</div>`;
 
   const subjMap = {};
-  tasks.forEach(t=>{
-    const s=t.subject.trim();
-    if (!subjMap[s]) subjMap[s]=[];
-    subjMap[s].push(t);
-  });
+  tasks.forEach(t=>{ const s=t.subject.trim(); if(!subjMap[s]) subjMap[s]=[]; subjMap[s].push(t); });
 
-  // 4. Dibujar cabeceras
-  const sticky4 = `style="position:sticky;left:0;z-index:11;background:var(--gray-800);"`;
+  // 4. Cabeceras — posiciones actualizadas (130/230/310)
+  const S0='position:sticky;left:0;z-index:11;background:var(--gray-800);';
+  const S1='position:sticky;left:130px;z-index:11;background:var(--gray-800);';
+  const S2='position:sticky;left:230px;z-index:11;background:var(--gray-800);';
+  const S3='position:sticky;left:310px;z-index:11;background:var(--gray-800);';
   let thead = `<thead><tr>
-    <th class="col-sticky" ${sticky4}>Assignatura</th>
-    <th class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:11;background:var(--gray-800);">Tema</th>
-    <th class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:11;background:var(--gray-800);">Tipus</th>
-    <th class="col-sticky col-total" style="position:sticky;left:166px;z-index:11;background:var(--gray-800);">Total</th>`;
-  
+    <th class="col-sticky" style="${S0}">Assignatura</th>
+    <th class="col-sticky col-sticky2" style="${S1}">Tema</th>
+    <th class="col-sticky col-sticky3" style="${S2}">Tipus</th>
+    <th class="col-sticky col-total"   style="${S3}">Total</th>`;
   let lastMonth = -1;
   dayData.forEach(({d,dow,ds,isToday,m}) => {
     const isExam=!!cal[ds]?.exam;
     let cls='plan-day-hdr';
-    if (isToday) cls+=' today-col';
-    else if (isExam) cls+=' exam-col';
-    else if (dow===0||dow===6) cls+=' weekend-col';
-    
-    // Etiquetar el mes si cambiamos de mes en la vista de 3 meses
-    let mLabel = '';
-    if (m !== lastMonth && planViewMode === 'quarter') {
-        mLabel = `<div style="font-size:8px; color:var(--blue-light); margin-bottom:2px;">${MONTH_NAMES[m].slice(0,3)}</div>`;
-        lastMonth = m;
-    }
+    if (isToday) cls+=' today-col'; else if (isExam) cls+=' exam-col'; else if (dow===0||dow===6) cls+=' weekend-col';
+    let mLabel='';
+    if (m!==lastMonth && planViewMode==='quarter') { mLabel=`<div style="font-size:8px;color:var(--blue-light);margin-bottom:2px;">${MONTH_NAMES[m].slice(0,3)}</div>`; lastMonth=m; }
     thead+=`<th class="${cls}">${mLabel}<div>${d}</div><div style="font-size:9px;opacity:0.7">${DAY_NAMES[dow]}</div></th>`;
   });
   thead+='</tr></thead>';
 
-  // 5. Dibujar filas genéricas (Disponibilidad y Exámenes)
+  // 5. Filas especiales
+  const bg_av='#f0fdf4', bg_ex='#fff1f2', bg_to='#f8fafc';
   let availRow = `<tr class="row-avail">
-    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f0fdf4;font-size:10px;color:var(--green);font-weight:600;">Hores lliures</td>
-    <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#f0fdf4;"></td>
-    <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#f0fdf4;"></td>
-    <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#f0fdf4;font-size:10px;font-weight:700;color:var(--green);text-align:center;">${totalAvail.toFixed(0)}</td>`;
-  dayData.forEach(({ds})=>{
-    const val=cal[ds]?.avail||'';
-    availRow+=`<td class="avail-cell" onclick="editAvailCell('${ds}',this)">${val||'—'}</td>`;
-  });
+    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:${bg_av};font-size:10px;color:var(--green);font-weight:600;">Hores lliures</td>
+    <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:${bg_av};"></td>
+    <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:${bg_av};"></td>
+    <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:${bg_av};font-size:10px;font-weight:700;color:var(--green);text-align:center;">${totalAvail.toFixed(0)}</td>`;
+  dayData.forEach(({ds})=>{ const val=cal[ds]?.avail||''; availRow+=`<td class="avail-cell" onclick="editAvailCell('${ds}',this)">${val||'—'}</td>`; });
   availRow+='</tr>';
 
   let examRow = `<tr class="row-exam">
-    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#fff1f2;font-size:10px;color:var(--red);font-weight:600;">Exàmens</td>
-    <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#fff1f2;"></td>
-    <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#fff1f2;"></td>
-    <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#fff1f2;"></td>`;
-  dayData.forEach(({ds})=>{
-    const isExam=!!cal[ds]?.exam;
-    examRow+=`<td class="exam-cell" onclick="toggleExam('${ds}')" title="${isExam?'Treure examen':'Marcar examen'}">${isExam?'📅':''}</td>`;
-  });
+    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:${bg_ex};font-size:10px;color:var(--red);font-weight:600;">Exàmens</td>
+    <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:${bg_ex};"></td>
+    <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:${bg_ex};"></td>
+    <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:${bg_ex};"></td>`;
+  dayData.forEach(({ds})=>{ const isExam=!!cal[ds]?.exam; examRow+=`<td class="exam-cell" onclick="toggleExam('${ds}')" title="${isExam?'Treure examen':'Marcar examen'}">${isExam?'📅':''}</td>`; });
   examRow+='</tr>';
 
-  // Totales por día
-  let monthTotals = [];
-  dayData.forEach(({ds})=>{
-    let t=0;
-    tasks.forEach(task=>{ t+=(logs[task.id]&&logs[task.id][ds])||0; });
-    monthTotals.push(t);
-  });
+  let monthTotals=[];
+  dayData.forEach(({ds})=>{ let t=0; tasks.forEach(task=>{ t+=(logs[task.id]&&logs[task.id][ds])||0; }); monthTotals.push(t); });
   let totalRow = `<tr class="row-total">
-    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f8fafc;font-size:10px;font-weight:700;">TOTAL DIA</td>
-    <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#f8fafc;"></td>
-    <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#f8fafc;"></td>
-    <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:#f8fafc;font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${totalDone.toFixed(1)}</td>`;
+    <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:${bg_to};font-size:10px;font-weight:700;">TOTAL DIA</td>
+    <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:${bg_to};"></td>
+    <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:${bg_to};"></td>
+    <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:${bg_to};font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${totalDone.toFixed(1)}</td>`;
   monthTotals.forEach((t,i)=>{
-    const ds=dayData[i].ds;
-    const isToday=ds===today, isExam=!!cal[ds]?.exam;
+    const ds=dayData[i].ds, isToday=ds===today, isExam=!!cal[ds]?.exam;
     let style='text-align:center;font-size:11px;font-weight:700;';
     if (t>0) style+='color:var(--blue);';
     if (isToday) style+='outline:2px solid var(--blue);outline-offset:-2px;';
@@ -1264,55 +1269,106 @@ function renderPlanMatrix() {
   });
   totalRow+='</tr>';
 
-  // 6. Dibujar tareas
+  // 6. Filas de tareas — ordenadas por nº de tareas (más tareas = arriba)
   let taskRows='';
-  Object.entries(subjMap).forEach(([subj,subjTasks])=>{
-    // NOTA: Asumo que hiciste el cambio del color picker, por lo que usamos la versión sin array COLORS
-    const color = getSubjectColor(subj); 
-    
+  Object.entries(subjMap).sort((a,b)=>b[1].length-a[1].length).forEach(([subj,subjTasks])=>{
+    const color = getSubjectColor(subj);
+    const safeId = 'add-row-' + subj.replace(/[^a-z0-9]/gi,'_');
+    const subjJson = JSON.stringify(subj);
+
     taskRows+=`<tr class="row-subject-hdr">
-      <td class="col-sticky" colspan="1" style="position:sticky;left:0;z-index:8;background:#eff6ff;color:${color};font-weight:700;font-size:11px;border-left:3px solid ${color};">
-        ${esc(subj)}
+      <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#eff6ff;color:${color};font-weight:700;font-size:11px;border-left:3px solid ${color};">
+        <span class="subject-color-btn" style="background:${color};" onclick="openColorPicker(${subjJson})" title="Canviar color"></span>${esc(subj)}
       </td>
-      <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:#eff6ff;"></td>
-      <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:#eff6ff;"></td>
-      <td class="col-sticky col-total"   style="position:sticky;left:166px;z-index:8;background:#eff6ff;"></td>
+      <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:#eff6ff;"></td>
+      <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:#eff6ff;"></td>
+      <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:#eff6ff;"></td>
       ${dayData.map(()=>'<td style="background:#eff6ff;"></td>').join('')}
     </tr>`;
-    
+
     subjTasks.forEach(t=>{
       const taskTotal=hoursForTask(t.id);
       const pct=t.estimatedHours>0?Math.min(100,Math.round(taskTotal/t.estimatedHours*100)):null;
       taskRows+=`<tr>
         <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:white;border-left:3px solid ${color};"></td>
-        <td class="col-sticky col-sticky2" style="position:sticky;left:60px;z-index:8;background:white;font-size:10px;color:var(--gray-600);">${esc(t.topic||'—')}</td>
-        <td class="col-sticky col-sticky3" style="position:sticky;left:116px;z-index:8;background:white;font-size:10px;color:var(--gray-400);">${esc(t.type||'')}</td>
-        <td class="col-sticky col-total" style="position:sticky;left:166px;z-index:8;background:white;padding:4px;">
+        <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:white;font-size:10px;color:var(--gray-600);">${esc(t.topic||'—')}</td>
+        <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:white;font-size:10px;color:var(--gray-400);">${esc(t.type||'')}</td>
+        <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:white;padding:4px;">
           <div style="font-size:11px;font-weight:700;color:var(--blue);text-align:center;">${taskTotal>0?taskTotal.toFixed(1):''}</div>
           ${pct!==null?`<div class="plan-progress"><div class="plan-progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':color};"></div></div>`:''}
         </td>`;
       dayData.forEach(({ds,isToday})=>{
-        const h=(logs[t.id]&&logs[t.id][ds])||0;
-        const isExam=!!cal[ds]?.exam;
-        const isPast=ds<today;
+        const h=(logs[t.id]&&logs[t.id][ds])||0, isExam=!!cal[ds]?.exam, isPast=ds<today;
         let cls='plan-cell';
-        if (h>2)      cls+=' has-hours-hi';
-        else if (h>0) cls+=' has-hours';
-        if (isToday)  cls+=' today-col';
+        if (h>2) cls+=' has-hours-hi'; else if (h>0) cls+=' has-hours';
+        if (isToday) cls+=' today-col';
         if (isPast&&!h) cls+=' past-col';
-        if (isExam)   cls+=' exam-col';
+        if (isExam) cls+=' exam-col';
         taskRows+=`<td class="${cls}" onclick="editCell('${t.id}','${ds}',this)">${h>0?h:''}</td>`;
       });
       taskRows+='</tr>';
     });
+
+    // Fila para añadir nueva tarea directamente desde planificación
+    taskRows+=`<tr class="row-add-task" id="${safeId}">
+      <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f9fafb;border-left:3px solid ${color};padding:3px 6px;">
+        <button class="add-task-btn" onclick="startInlineAdd(${subjJson})">＋ nova tasca</button>
+      </td>
+      <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:#f9fafb;padding:2px 4px;"></td>
+      <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:#f9fafb;padding:2px 4px;"></td>
+      <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:#f9fafb;"></td>
+      ${dayData.map(()=>'<td style="background:#f9fafb;"></td>').join('')}
+    </tr>`;
   });
 
   if (!tasks.length) {
     taskRows=`<tr><td colspan="${4+dayData.length}" class="empty" style="padding:32px;">Cap tasca. Ves a Tasques per afegir-ne.</td></tr>`;
   }
-
   document.getElementById('planTable').innerHTML = thead + `<tbody>${availRow}${examRow}${totalRow}${taskRows}</tbody>`;
 }
+function startInlineAdd(subj) {
+  const safeId = 'add-row-' + subj.replace(/[^a-z0-9]/gi,'_');
+  const row = document.getElementById(safeId);
+  if (!row) return;
+
+  const temaCell  = row.cells[1];
+  const tipisCell = row.cells[2];
+
+  const temaInp = document.createElement('input');
+  temaInp.className = 'plan-inline-input';
+  temaInp.placeholder = 'Tema...';
+
+  const tipisSelect = document.createElement('select');
+  tipisSelect.className = 'plan-inline-select';
+  tipisSelect.innerHTML = '<option value="">Tipus…</option><option>Apunts</option><option>Problemes</option><option>Matlab</option><option>Repasar</option><option>Examen</option><option>Treball</option><option>Pràctica</option>';
+
+  row.cells[0].innerHTML = '<span style="font-size:10px;color:var(--gray-400);padding:2px 6px;">↵ guardar · Esc cancel·lar</span>';
+  temaCell.innerHTML = ''; temaCell.appendChild(temaInp);
+  tipisCell.innerHTML = ''; tipisCell.appendChild(tipisSelect);
+  temaInp.focus();
+
+  const save = () => {
+    const tema = temaInp.value.trim();
+    const tipus = tipisSelect.value;
+    if (!tema && !tipus) { renderPlanMatrix(); return; }
+    const tasks = loadTasks();
+    tasks.push({ id: genId(), createdAt: todayStr(), subject: subj, topic: tema, type: tipus, detail: '', estimatedHours: 0, status: '' });
+    saveTasks(tasks); refreshTaskSelects(); schedulePush();
+    showToast(`✓ Tasca afegida a ${subj}`);
+    renderPlanMatrix();
+  };
+  temaInp.addEventListener('keydown', e => {
+    if (e.key==='Tab')    { e.preventDefault(); tipisSelect.focus(); }
+    if (e.key==='Enter')  { e.preventDefault(); save(); }
+    if (e.key==='Escape') { e.preventDefault(); renderPlanMatrix(); }
+  });
+  tipisSelect.addEventListener('keydown', e => {
+    if (e.key==='Enter')  { e.preventDefault(); save(); }
+    if (e.key==='Tab')    { e.preventDefault(); save(); }
+    if (e.key==='Escape') { e.preventDefault(); renderPlanMatrix(); }
+  });
+}
+
 function hoursForAllTasksAll() {
   const logs=loadLogs();
   let total=0;
@@ -1395,7 +1451,7 @@ function renderSummary() {
     <div class="stat-box"><div class="stat-value">${Math.max(0,totalE-totalH).toFixed(1)}</div><div class="stat-label">Hores restants</div></div>`;
   const maxH=Math.max(...Object.values(subjH),1);
   document.getElementById('subjectStats').innerHTML=Object.entries(subjH).sort((a,b)=>b[1]-a[1]).map(([s,h])=>{
-    const c=COLORS[getSubjectColor(s)];
+    const c=getSubjectColor(s);
     return `<div style="margin-bottom:12px;">
       <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
         <span><span class="dot" style="background:${c}"></span>${esc(s)}</span>
@@ -1407,7 +1463,7 @@ function renderSummary() {
     const done=hoursInRange(t.id,from,to);
     if (!done&&!t.estimatedHours) return '';
     const pctT=t.estimatedHours>0?Math.min(100,Math.round(done/t.estimatedHours*100)):0;
-    const c=COLORS[getSubjectColor(t.subject)];
+    const c=getSubjectColor(t.subject);
     return `<div style="padding:8px 0;border-bottom:1px solid var(--gray-100);">
       <div style="display:flex;justify-content:space-between;margin-bottom:5px;">
         <div>${colorDot(t.subject)}<strong>${esc(t.subject)}</strong>

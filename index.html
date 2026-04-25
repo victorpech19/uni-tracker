@@ -884,11 +884,19 @@ function setSubjectColor(subj, color) {
 }
 function openColorPicker(subj) {
   const inp = document.createElement('input');
-  inp.type = 'color'; inp.value = getSubjectColor(subj);
-  inp.style.cssText = 'position:absolute;opacity:0;pointer-events:none;width:0;height:0;';
+  inp.type = 'color';
+  inp.value = getSubjectColor(subj);
+  // Posicionem fora de pantalla — width:0 fa que alguns navegadors no obrin el picker
+  inp.style.cssText = 'position:fixed;top:-200px;left:-200px;width:40px;height:40px;opacity:0;';
   document.body.appendChild(inp);
-  inp.addEventListener('change', () => setSubjectColor(subj, inp.value));
-  inp.addEventListener('blur', () => setTimeout(()=>{ if(document.body.contains(inp)) document.body.removeChild(inp); }, 300));
+  inp.addEventListener('change', () => {
+    setSubjectColor(subj, inp.value);
+    if (document.body.contains(inp)) document.body.removeChild(inp);
+  });
+  inp.addEventListener('blur', () => {
+    setTimeout(() => { if (document.body.contains(inp)) document.body.removeChild(inp); }, 500);
+  });
+  inp.focus();
   inp.click();
 }
 function colorDot(subj) { return `<span class="dot" style="background:${getSubjectColor(subj)}"></span>`; }
@@ -1270,15 +1278,18 @@ function renderPlanMatrix() {
   totalRow+='</tr>';
 
   // 6. Filas de tareas — ordenadas por nº de tareas (más tareas = arriba)
+  // _ps: lookup global para pasar strings de asignatura sin problemas de quoting en onclick
+  window._ps = [];
   let taskRows='';
   Object.entries(subjMap).sort((a,b)=>b[1].length-a[1].length).forEach(([subj,subjTasks])=>{
-    const color = getSubjectColor(subj);
-    const safeId = 'add-row-' + subj.replace(/[^a-z0-9]/gi,'_');
-    const subjJson = JSON.stringify(subj);
+    const color  = getSubjectColor(subj);
+    const safeId = 'add-row-' + subj.replace(/[^a-z0-9]/gi,'_') + '_' + window._ps.length;
+    const psIdx  = window._ps.length;
+    window._ps.push(subj);
 
     taskRows+=`<tr class="row-subject-hdr">
       <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#eff6ff;color:${color};font-weight:700;font-size:11px;border-left:3px solid ${color};">
-        <span class="subject-color-btn" style="background:${color};" onclick="openColorPicker(${subjJson})" title="Canviar color"></span>${esc(subj)}
+        <span class="subject-color-btn" style="background:${color};" onclick="openColorPicker(window._ps[${psIdx}])" title="Canviar color"></span>${esc(subj)}
       </td>
       <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:#eff6ff;"></td>
       <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:#eff6ff;"></td>
@@ -1309,14 +1320,14 @@ function renderPlanMatrix() {
       taskRows+='</tr>';
     });
 
-    // Fila para añadir nueva tarea directamente desde planificación
+    // Fila inline para añadir nueva tarea (Tema · Tipus · Hores)
     taskRows+=`<tr class="row-add-task" id="${safeId}">
       <td class="col-sticky" style="position:sticky;left:0;z-index:8;background:#f9fafb;border-left:3px solid ${color};padding:3px 6px;">
-        <button class="add-task-btn" onclick="startInlineAdd(${subjJson})">＋ nova tasca</button>
+        <button class="add-task-btn" onclick="startInlineAdd(${psIdx})">＋ nova tasca</button>
       </td>
       <td class="col-sticky col-sticky2" style="position:sticky;left:130px;z-index:8;background:#f9fafb;padding:2px 4px;"></td>
       <td class="col-sticky col-sticky3" style="position:sticky;left:230px;z-index:8;background:#f9fafb;padding:2px 4px;"></td>
-      <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:#f9fafb;"></td>
+      <td class="col-sticky col-total"   style="position:sticky;left:310px;z-index:8;background:#f9fafb;padding:2px 3px;"></td>
       ${dayData.map(()=>'<td style="background:#f9fafb;"></td>').join('')}
     </tr>`;
   });
@@ -1326,13 +1337,20 @@ function renderPlanMatrix() {
   }
   document.getElementById('planTable').innerHTML = thead + `<tbody>${availRow}${examRow}${totalRow}${taskRows}</tbody>`;
 }
-function startInlineAdd(subj) {
-  const safeId = 'add-row-' + subj.replace(/[^a-z0-9]/gi,'_');
+function startInlineAdd(psIdx) {
+  // psIdx és l'índex dins window._ps (evita problemes de comilles en onclick)
+  const subj = window._ps && window._ps[psIdx];
+  if (!subj) return;
+
+  // Trobar la fila per ID — mateixa lògica que renderPlanMatrix
+  const safeId = 'add-row-' + subj.replace(/[^a-z0-9]/gi,'_') + '_' + psIdx;
   const row = document.getElementById(safeId);
   if (!row) return;
 
+  // Camps: Tema (cells[1]) · Tipus (cells[2]) · Hores previstes (cells[3])
   const temaCell  = row.cells[1];
   const tipisCell = row.cells[2];
+  const horesCell = row.cells[3];
 
   const temaInp = document.createElement('input');
   temaInp.className = 'plan-inline-input';
@@ -1342,30 +1360,44 @@ function startInlineAdd(subj) {
   tipisSelect.className = 'plan-inline-select';
   tipisSelect.innerHTML = '<option value="">Tipus…</option><option>Apunts</option><option>Problemes</option><option>Matlab</option><option>Repasar</option><option>Examen</option><option>Treball</option><option>Pràctica</option>';
 
-  row.cells[0].innerHTML = '<span style="font-size:10px;color:var(--gray-400);padding:2px 6px;">↵ guardar · Esc cancel·lar</span>';
-  temaCell.innerHTML = ''; temaCell.appendChild(temaInp);
+  const horesInp = document.createElement('input');
+  horesInp.type = 'number'; horesInp.min = '0'; horesInp.step = '0.5';
+  horesInp.className = 'plan-inline-input';
+  horesInp.placeholder = 'h';
+  horesInp.title = 'Hores previstes';
+
+  row.cells[0].innerHTML = '<span style="font-size:9px;color:var(--gray-400);padding:2px 4px;line-height:1.3;display:block;">Tab→seg<br>↵ guardar</span>';
+  temaCell.innerHTML  = ''; temaCell.appendChild(temaInp);
   tipisCell.innerHTML = ''; tipisCell.appendChild(tipisSelect);
+  horesCell.innerHTML = ''; horesCell.appendChild(horesInp);
   temaInp.focus();
 
   const save = () => {
-    const tema = temaInp.value.trim();
+    const tema  = temaInp.value.trim();
     const tipus = tipisSelect.value;
+    const hores = parseFloat(horesInp.value) || 0;
     if (!tema && !tipus) { renderPlanMatrix(); return; }
     const tasks = loadTasks();
-    tasks.push({ id: genId(), createdAt: todayStr(), subject: subj, topic: tema, type: tipus, detail: '', estimatedHours: 0, status: '' });
+    tasks.push({ id: genId(), createdAt: todayStr(), subject: subj, topic: tema, type: tipus, detail: '', estimatedHours: hores, status: '' });
     saveTasks(tasks); refreshTaskSelects(); schedulePush();
     showToast(`✓ Tasca afegida a ${subj}`);
     renderPlanMatrix();
   };
+
   temaInp.addEventListener('keydown', e => {
-    if (e.key==='Tab')    { e.preventDefault(); tipisSelect.focus(); }
-    if (e.key==='Enter')  { e.preventDefault(); save(); }
-    if (e.key==='Escape') { e.preventDefault(); renderPlanMatrix(); }
+    if (e.key === 'Tab')    { e.preventDefault(); tipisSelect.focus(); }
+    if (e.key === 'Enter')  { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { e.preventDefault(); renderPlanMatrix(); }
   });
   tipisSelect.addEventListener('keydown', e => {
-    if (e.key==='Enter')  { e.preventDefault(); save(); }
-    if (e.key==='Tab')    { e.preventDefault(); save(); }
-    if (e.key==='Escape') { e.preventDefault(); renderPlanMatrix(); }
+    if (e.key === 'Tab')    { e.preventDefault(); horesInp.focus(); }
+    if (e.key === 'Enter')  { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { e.preventDefault(); renderPlanMatrix(); }
+  });
+  horesInp.addEventListener('keydown', e => {
+    if (e.key === 'Tab')    { e.preventDefault(); save(); }
+    if (e.key === 'Enter')  { e.preventDefault(); save(); }
+    if (e.key === 'Escape') { e.preventDefault(); renderPlanMatrix(); }
   });
 }
 

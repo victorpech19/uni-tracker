@@ -303,12 +303,28 @@
     .row-total td { background: #f8fafc; font-weight: 700; font-size: 11px; }
     .row-total .col-sticky { background: #f8fafc; }
 
-    @media (max-width: 500px) {
-      .main { padding: 12px 10px; }
-      .nav-btn { padding: 10px 12px; font-size: 12px; }
+    @media (max-width: 600px) {
+      .main { padding: 10px 8px; }
+      .nav-btn { padding: 10px 10px; font-size: 12px; }
       .form-row { flex-direction: column; }
       .stats-grid { grid-template-columns: repeat(2, 1fr); }
       .timer-display { font-size: 36px; }
+      /* header compacte */
+      .header { padding: 0 12px; }
+      .header-date { display: none; }
+      .header-title { font-size: 14px; }
+      /* modal full-width */
+      .modal { border-radius: 12px 12px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-width: 100% !important; margin: 0; }
+      .modal-overlay { align-items: flex-end; padding: 0; }
+      /* tasks filter bar */
+      #taskFilterSubject, #taskFilterType, #taskFilterStatus { min-width: 0; flex: 1 1 40%; }
+      /* plan stats compactes */
+      .plan-stat { padding: 6px 10px; }
+      .plan-stat strong { font-size: 14px; }
+      /* setup screen */
+      .setup-screen { margin: 20px auto; }
+      /* card headers */
+      .card-header { flex-wrap: wrap; gap: 8px; }
     }
   </style>
 </head>
@@ -457,10 +473,29 @@
           <span class="card-title">📋 Totes les tasques</span>
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
             <label class="btn btn-ghost btn-sm" style="cursor:pointer;">
-              📥 Importar tasques (JSON)
+              📥 Importar
               <input type="file" accept=".json" style="display:none;" onchange="importTasksMerge(event)">
             </label>
             <button class="btn btn-primary btn-sm" onclick="openTaskModal()">+ Nova tasca</button>
+          </div>
+        </div>
+        <!-- Filtres i agrupació -->
+        <div style="padding:10px 16px;border-bottom:1px solid var(--gray-100);display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:var(--gray-50);">
+          <select id="taskFilterSubject" onchange="renderTasksTable()" style="font-size:12px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:6px;background:white;flex:1;min-width:120px;">
+            <option value="">Totes les assignatures</option>
+          </select>
+          <select id="taskFilterType" onchange="renderTasksTable()" style="font-size:12px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:6px;background:white;flex:1;min-width:100px;">
+            <option value="">Tots els tipus</option>
+          </select>
+          <select id="taskFilterStatus" onchange="renderTasksTable()" style="font-size:12px;padding:5px 8px;border:1px solid var(--gray-200);border-radius:6px;background:white;min-width:100px;">
+            <option value="">Totes</option>
+            <option value="pending">Pendents</option>
+            <option value="ok">Fetes</option>
+          </select>
+          <div style="display:flex;gap:2px;border:1px solid var(--gray-200);border-radius:7px;overflow:hidden;flex-shrink:0;">
+            <button id="grpFlat"    class="btn btn-sm" style="border-radius:0;border:none;background:var(--blue);color:white;" onclick="setTaskGroupMode('flat')">Llista</button>
+            <button id="grpSubject" class="btn btn-sm" style="border-radius:0;border:none;background:white;color:var(--gray-600);" onclick="setTaskGroupMode('subject')">Assignatura</button>
+            <button id="grpType"    class="btn btn-sm" style="border-radius:0;border:none;background:white;color:var(--gray-600);" onclick="setTaskGroupMode('type')">Tipus</button>
           </div>
         </div>
         <div class="card-body" style="padding:0;">
@@ -887,7 +922,7 @@ function openColorPicker(subj) {
   inp.type = 'color';
   inp.value = getSubjectColor(subj);
   // Posicionem fora de pantalla — width:0 fa que alguns navegadors no obrin el picker
-  inp.style.cssText = 'position:fixed;top:-200px;left:-200px;width:40px;height:40px;opacity:0;';
+  inp.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;opacity:0;';
   document.body.appendChild(inp);
   inp.addEventListener('change', () => {
     setSubjectColor(subj, inp.value);
@@ -1026,27 +1061,89 @@ function hoursForTask(id) {
   if (!logs[id]) return 0;
   return Object.values(logs[id]).reduce((a,b)=>a+b,0);
 }
+
+function renderTaskRow(t) {
+  const done = hoursForTask(t.id);
+  const pct  = t.estimatedHours > 0 ? Math.min(100, Math.round(done/t.estimatedHours*100)) : null;
+  return `<tr>
+    <td>${colorDot(t.subject)}${esc(t.subject)}</td>
+    <td>${esc(t.topic||'—')}</td><td>${esc(t.type||'—')}</td><td>${esc(t.detail||'—')}</td>
+    <td>${t.status==='ok'?'<span class="badge badge-ok">✓ Fet</span>':'<span class="badge badge-pending">Pendent</span>'}</td>
+    <td>${t.estimatedHours||'—'}</td>
+    <td style="color:var(--blue);font-weight:600">${done>0?done.toFixed(1):'0'}</td>
+    <td>${pct!==null?`<div class="progress-wrap"><div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--blue)'}"></div></div><span class="progress-label">${pct}%</span></div>`:'—'}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-icon" onclick="openTaskModal('${t.id}')">✏️</button>
+      <button class="btn-icon" onclick="deleteTask('${t.id}')">🗑</button>
+    </td></tr>`;
+}
+
+function setTaskGroupMode(mode) {
+  window._taskGroupMode = mode;
+  ['flat','subject','type'].forEach(m => {
+    const btn = document.getElementById('grp'+m.charAt(0).toUpperCase()+m.slice(1));
+    if (btn) { btn.style.background = m===mode ? 'var(--blue)' : 'white'; btn.style.color = m===mode ? 'white' : 'var(--gray-600)'; }
+  });
+  renderTasksTable();
+}
+
 function renderTasksTable() {
-  const tasks=loadTasks();
-  const tbody=document.getElementById('tasksTableBody');
-  if (!tasks.length) { tbody.innerHTML='<tr><td colspan="9" class="empty">Cap tasca</td></tr>'; return; }
-  tbody.innerHTML=tasks.map(t=>{
-    const done=hoursForTask(t.id);
-    const pct=t.estimatedHours>0?Math.min(100,Math.round(done/t.estimatedHours*100)):null;
-    return `<tr>
-      <td>${colorDot(t.subject)}${esc(t.subject)}</td>
-      <td>${esc(t.topic||'—')}</td><td>${esc(t.type||'—')}</td><td>${esc(t.detail||'—')}</td>
-      <td>${t.status==='ok'?'<span class="badge badge-ok">✓ Fet</span>':'<span class="badge badge-pending">Pendent</span>'}</td>
-      <td>${t.estimatedHours||'—'}</td>
-      <td style="color:var(--blue);font-weight:600">${done>0?done.toFixed(1):'0'}</td>
-      <td>${pct!==null?`<div class="progress-wrap">
-        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--blue)'}"></div></div>
-        <span class="progress-label">${pct}%</span></div>`:'—'}</td>
-      <td>
-        <button class="btn-icon" onclick="openTaskModal('${t.id}')">✏️</button>
-        <button class="btn-icon" onclick="deleteTask('${t.id}')">🗑</button>
-      </td></tr>`;
-  }).join('');
+  const tasks   = loadTasks();
+  const tbody   = document.getElementById('tasksTableBody');
+  const groupMode = window._taskGroupMode || 'flat';
+
+  // Actualitzar desplegables de filtre
+  const subjects = [...new Set(tasks.map(t=>t.subject.trim()))].sort();
+  const types    = [...new Set(tasks.map(t=>t.type).filter(Boolean))].sort();
+  const subSel   = document.getElementById('taskFilterSubject');
+  const typSel   = document.getElementById('taskFilterType');
+  if (subSel) {
+    const curS = subSel.value;
+    subSel.innerHTML = '<option value="">Totes les assignatures</option>' + subjects.map(s=>`<option value="${esc(s)}" ${s===curS?'selected':''}>${esc(s)}</option>`).join('');
+  }
+  if (typSel) {
+    const curT = typSel.value;
+    typSel.innerHTML = '<option value="">Tots els tipus</option>' + types.map(t=>`<option value="${esc(t)}" ${t===curT?'selected':''}>${esc(t)}</option>`).join('');
+  }
+
+  // Aplicar filtres
+  const filterSubject = subSel?.value || '';
+  const filterType    = typSel?.value || '';
+  const filterStatus  = document.getElementById('taskFilterStatus')?.value || '';
+
+  let filtered = tasks.filter(t => {
+    if (filterSubject && t.subject.trim() !== filterSubject) return false;
+    if (filterType    && (t.type||'') !== filterType)        return false;
+    if (filterStatus === 'pending' && t.status === 'ok')     return false;
+    if (filterStatus === 'ok'      && t.status !== 'ok')     return false;
+    return true;
+  });
+
+  if (!filtered.length) { tbody.innerHTML='<tr><td colspan="9" class="empty">Cap tasca amb aquests filtres</td></tr>'; return; }
+
+  // Renderitzar
+  if (groupMode === 'flat') {
+    tbody.innerHTML = filtered.map(renderTaskRow).join('');
+  } else {
+    const key = groupMode === 'subject' ? 'subject' : 'type';
+    const groups = {};
+    filtered.forEach(t => {
+      const k = (t[key]||'(sense tipus)').trim();
+      if (!groups[k]) groups[k] = [];
+      groups[k].push(t);
+    });
+    let html = '';
+    Object.entries(groups).sort((a,b) => b[1].length - a[1].length).forEach(([grpKey, grpTasks]) => {
+      const color = groupMode==='subject' ? getSubjectColor(grpKey) : 'var(--gray-600)';
+      html += `<tr style="background:#eff6ff;">
+        <td colspan="9" style="padding:6px 14px;font-weight:700;font-size:12px;color:${color};border-left:3px solid ${color};">
+          ${groupMode==='subject'?colorDot(grpKey):''}${esc(grpKey)} <span style="color:var(--gray-400);font-weight:400;font-size:11px;">${grpTasks.length} tasca${grpTasks.length!==1?'es':''}</span>
+        </td>
+      </tr>`;
+      html += grpTasks.map(renderTaskRow).join('');
+    });
+    tbody.innerHTML = html;
+  }
 }
 
 // ─── TASK MODAL ───────────────────────────────────────────────────────────────
@@ -1079,12 +1176,27 @@ function saveTask() {
   if (!subject) return showToast('Assignatura obligatòria');
   const tasks=loadTasks();
   const editId=document.getElementById('editTaskId').value;
+  const newStatus=document.getElementById('taskStatus').value;
+
+  // Si es marca com a feta per primera vegada, igualar hores previstes a les reals
+  let estimatedHours = parseFloat(document.getElementById('taskEstimated').value)||0;
+  if (editId && newStatus==='ok') {
+    const prev = tasks.find(t=>t.id===editId);
+    if (prev && prev.status!=='ok') {
+      const actual = hoursForTask(editId);
+      if (actual > 0) {
+        estimatedHours = Math.round(actual * 100) / 100;
+        showToast(`✓ Tasca finalitzada · Hores previstes → ${estimatedHours}h`);
+      }
+    }
+  }
+
   const data={
     subject, topic: document.getElementById('taskTopic').value.trim(),
     type: document.getElementById('taskType').value,
     detail: document.getElementById('taskDetail').value.trim(),
-    estimatedHours: parseFloat(document.getElementById('taskEstimated').value)||0,
-    status: document.getElementById('taskStatus').value
+    estimatedHours,
+    status: newStatus
   };
   if (editId) {
     const i=tasks.findIndex(t=>t.id===editId);
@@ -1093,7 +1205,7 @@ function saveTask() {
     tasks.push({id:genId(), createdAt:todayStr(), ...data});
   }
   saveTasks(tasks); closeTaskModal(); renderTasksTable(); refreshTaskSelects(); schedulePush();
-  showToast('✓ Tasca guardada');
+  if (newStatus!=='ok' || !editId) showToast('✓ Tasca guardada');
 }
 
 function deleteTask(id) {
